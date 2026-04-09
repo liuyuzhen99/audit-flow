@@ -1,24 +1,13 @@
-import type { ModuleSummary } from "@/types/common";
-
 import { PageToolbar } from "@/components/shared/page-toolbar";
 import { SearchInput } from "@/components/shared/search-input";
 import { StatCard } from "@/components/shared/stat-card";
 import { StatusBadge } from "@/components/shared/status-badge";
+import { adaptArtistsDashboard } from "@/lib/adapters/artists";
+import { buildArtistsDashboardResponse } from "@/lib/mocks/sources/artists";
 
-const artistStats: ModuleSummary[] = [
-  { label: "Monitored Artists", value: "1,284", hint: "+12 this week", tone: "success" },
-  { label: "New Releases", value: "86", hint: "24 awaiting manual review", tone: "info" },
-  { label: "Auto-pass Rate", value: "94.2%", hint: "AI audit stable", tone: "success" },
-  { label: "API Quota", value: "8,420", hint: "YouTube Data v3", tone: "warning" },
-];
+export default async function ArtistsPage() {
+  const dashboard = adaptArtistsDashboard(buildArtistsDashboardResponse());
 
-const artistRows = [
-  { name: "The Weeknd", channel: "The Weeknd Official", releases: "3 new tracks", status: "Auto-approved", tone: "success" as const },
-  { name: "Dua Lipa", channel: "Dua Lipa YT", releases: "1 new track", status: "Manual review", tone: "warning" as const },
-  { name: "Travis Scott", channel: "Cactus Jack", releases: "5 new tracks", status: "Auto-rejected", tone: "danger" as const },
-];
-
-export default function ArtistsPage() {
   return (
     <section className="space-y-6">
       <div className="flex flex-col gap-3 xl:flex-row xl:items-start xl:justify-between">
@@ -33,8 +22,8 @@ export default function ArtistsPage() {
       </div>
 
       <div className="grid gap-4 xl:grid-cols-4">
-        {artistStats.map((stat) => (
-          <StatCard key={stat.label} {...stat} />
+        {dashboard.summary.map((stat) => (
+          <StatCard key={stat.label} label={stat.label} value={stat.value} hint={stat.hint} tone={stat.tone} />
         ))}
       </div>
 
@@ -58,16 +47,16 @@ export default function ArtistsPage() {
           <span>Audit Status</span>
         </div>
         <div>
-          {artistRows.map((row) => (
-            <div key={row.name} className="grid grid-cols-[1.8fr_1.1fr_1.4fr_1fr_1.2fr] gap-4 border-b border-[var(--color-border)] px-6 py-5 last:border-b-0">
+          {dashboard.rows.map((row) => (
+            <div key={row.id} className="grid grid-cols-[1.8fr_1.1fr_1.4fr_1fr_1.2fr] gap-4 border-b border-[var(--color-border)] px-6 py-5 last:border-b-0">
               <div>
                 <p className="text-lg font-semibold text-slate-900">{row.name}</p>
-                <p className="text-sm text-slate-500">Last updated within the last few hours</p>
+                <p className="text-sm text-slate-500">{row.freshnessLabel}</p>
               </div>
-              <p className="text-base font-semibold text-slate-800">42.1M</p>
-              <p className="text-base text-slate-700">{row.channel}</p>
-              <p className="text-base font-medium text-indigo-600">{row.releases}</p>
-              <StatusBadge label={row.status} tone={row.tone} />
+              <p className="text-base font-semibold text-slate-800">{row.followerLabel}</p>
+              <p className="text-base text-slate-700">{row.channelLabel}</p>
+              <p className="text-base font-medium text-indigo-600">{row.releasesLabel}</p>
+              <StatusBadge label={row.statusLabel} tone={row.statusTone} />
             </div>
           ))}
         </div>

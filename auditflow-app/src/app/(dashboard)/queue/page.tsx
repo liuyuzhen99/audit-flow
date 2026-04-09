@@ -1,24 +1,13 @@
-import type { ModuleSummary } from "@/types/common";
-
 import { PageToolbar } from "@/components/shared/page-toolbar";
 import { SearchInput } from "@/components/shared/search-input";
 import { StatCard } from "@/components/shared/stat-card";
 import { StatusBadge } from "@/components/shared/status-badge";
+import { adaptQueueDashboard } from "@/lib/adapters/queue";
+import { buildQueueDashboardResponse } from "@/lib/mocks/sources/queue";
 
-const queueStats: ModuleSummary[] = [
-  { label: "Active Tasks", value: "24", tone: "info" },
-  { label: "Auto-approved Today", value: "142", tone: "success" },
-  { label: "Manual Review", value: "12", tone: "warning" },
-  { label: "Auto-rejected", value: "5", tone: "danger" },
-];
+export default async function QueuePage() {
+  const dashboard = adaptQueueDashboard(buildQueueDashboardResponse({ tick: 0 }));
 
-const queueRows = [
-  { title: "Midnight City (Remix)", artist: "M83", status: "Auto-approved", tone: "success" as const, confidence: "98%", summary: "No rights conflicts, audio quality verified", progress: "Audit score 100%" },
-  { title: "Levitating", artist: "Dua Lipa", status: "Auditing", tone: "info" as const, confidence: "--%", summary: "Scanning content fingerprints...", progress: "Audit score 65%" },
-  { title: "Starboy (Live)", artist: "The Weeknd", status: "Manual review", tone: "warning" as const, confidence: "72%", summary: "Potential crowd noise detected", progress: "Audit score 100%" },
-];
-
-export default function QueuePage() {
   return (
     <section className="space-y-6">
       <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
@@ -35,8 +24,8 @@ export default function QueuePage() {
       </div>
 
       <div className="grid gap-4 xl:grid-cols-4">
-        {queueStats.map((stat) => (
-          <StatCard key={stat.label} {...stat} />
+        {dashboard.summary.map((stat) => (
+          <StatCard key={stat.label} label={stat.label} value={stat.value} hint={stat.hint} tone={stat.tone} />
         ))}
       </div>
 
@@ -63,19 +52,25 @@ export default function QueuePage() {
         </div>
 
         <div>
-          {queueRows.map((row) => (
-            <div key={row.title} className="grid grid-cols-[1.8fr_1.1fr_1fr_1.6fr_1.1fr] gap-4 border-b border-[var(--color-border)] px-6 py-5 last:border-b-0">
+          {dashboard.rows.map((row) => (
+            <div key={row.id} className="grid grid-cols-[1.8fr_1.1fr_1fr_1.6fr_1.1fr] gap-4 border-b border-[var(--color-border)] px-6 py-5 last:border-b-0">
               <div>
                 <p className="text-lg font-semibold text-slate-900">{row.title}</p>
-                <p className="text-sm text-slate-500">{row.artist}</p>
+                <p className="text-sm text-slate-500">{row.artistName}</p>
               </div>
-              <StatusBadge label={row.status} tone={row.tone} />
-              <p className="text-base font-semibold text-slate-800">{row.confidence}</p>
-              <p className="text-sm text-slate-600">{row.summary}</p>
+              <StatusBadge label={row.statusLabel} tone={row.statusTone} />
+              <p className="text-base font-semibold text-slate-800">{row.confidenceLabel}</p>
+              <div>
+                <p className="text-sm text-slate-600">{row.summaryLabel}</p>
+                <p className="mt-2 text-xs text-slate-400">Updated {row.updatedLabel}</p>
+              </div>
               <div className="space-y-2">
-                <p className="text-sm font-medium text-slate-600">{row.progress}</p>
+                <p className="text-sm font-medium text-slate-600">{row.progressLabel}</p>
                 <div className="h-2 rounded-full bg-slate-100">
-                  <div className="h-2 w-3/4 rounded-full bg-[var(--color-primary)]" />
+                  <div
+                    className="h-2 rounded-full bg-[var(--color-primary)]"
+                    style={{ width: `${row.progressPercent}%` }}
+                  />
                 </div>
               </div>
             </div>

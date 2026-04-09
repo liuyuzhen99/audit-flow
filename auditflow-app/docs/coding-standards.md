@@ -1,0 +1,2 @@
+- all the variable names should be in unified format
+- necessary comment is needed and it should be clear
