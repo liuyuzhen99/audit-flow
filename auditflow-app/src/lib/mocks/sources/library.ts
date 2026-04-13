@@ -4,6 +4,8 @@ import { libraryDashboardResponseDtoSchema } from "@/lib/schemas/library";
 import { librarySeedRecords } from "@/lib/mocks/data/library";
 import { MOCK_GENERATED_AT } from "@/lib/mocks/data/common";
 
+type LibraryDashboardQuery = Pick<ListQueryDto, "q" | "status">;
+
 function filterLibraryAssets(items: LibraryAssetDto[], query?: Pick<ListQueryDto, "q" | "status">): LibraryAssetDto[] {
   return items.filter((item) => {
     const matchesQuery =
@@ -20,14 +22,14 @@ function countLibraryAssets(items: LibraryAssetDto[], predicate: (item: LibraryA
   return String(items.filter(predicate).length);
 }
 
-export function buildLibraryDashboardResponse(query?: Pick<ListQueryDto, "q" | "status">): LibraryDashboardResponseDto {
+export function buildLibraryDashboardResponse(query?: Partial<LibraryDashboardQuery>): LibraryDashboardResponseDto {
   const items = filterLibraryAssets(librarySeedRecords, query);
 
   return libraryDashboardResponseDtoSchema.parse({
     summary: [
       { id: "library-published", label: "Published Assets", value: countLibraryAssets(items, (item) => item.status === "published"), hint: "8 visible in this view", tone: "success" },
       { id: "library-processing", label: "Processing", value: countLibraryAssets(items, (item) => item.status === "processing"), hint: "Awaiting renders", tone: "info" },
-      { id: "library-review", label: "Needs Review", value: countLibraryAssets(items, (item) => item.status === "review"), hint: "One failed audit package", tone: "warning" },
+      { id: "library-review", label: "Needs Review", value: countLibraryAssets(items, (item) => item.status === "review" || item.status === "failed"), hint: "One failed audit package", tone: "warning" },
       { id: "library-refresh", label: "Recent Sync", value: "2m", hint: "Library refreshed recently", tone: "info" },
     ],
     items,

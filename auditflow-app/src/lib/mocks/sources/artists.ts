@@ -1,8 +1,10 @@
 import { artistsDashboardResponseDtoSchema, artistListResponseDtoSchema } from "@/lib/schemas/artist";
 import { MOCK_GENERATED_AT } from "@/lib/mocks/data/common";
 import { artistSeedRecords } from "@/lib/mocks/data/artists";
-import type { ListQueryDto } from "@/types/api";
+import { DEFAULT_PAGE, type ListQueryDto, SortDirection } from "@/types/api";
 import type { ArtistDto, ArtistsDashboardResponseDto, ArtistListResponseDto } from "@/types/artist";
+
+type ArtistsDashboardQuery = Pick<ListQueryDto, "page" | "pageSize" | "q" | "status" | "sortBy" | "sortDirection">;
 
 function filterArtists(items: ArtistDto[], query?: Pick<ListQueryDto, "q" | "status">): ArtistDto[] {
   return items.filter((item) => {
@@ -16,21 +18,62 @@ function filterArtists(items: ArtistDto[], query?: Pick<ListQueryDto, "q" | "sta
   });
 }
 
+function sortArtists(items: ArtistDto[], sortBy?: string, sortDirection: SortDirection = "asc"): ArtistDto[] {
+  const sortedItems = [...items];
+  const sortMultiplier = sortDirection === "desc" ? -1 : 1;
+
+  sortedItems.sort((left, right) => {
+    switch (sortBy) {
+      case "name":
+        return left.name.localeCompare(right.name) * sortMultiplier;
+      case "spotifyFollowers":
+        return (left.spotifyFollowers - right.spotifyFollowers) * sortMultiplier;
+      case "recentReleaseCount":
+        return (left.recentReleaseCount - right.recentReleaseCount) * sortMultiplier;
+      case "status":
+        return left.auditSnapshot.status.localeCompare(right.auditSnapshot.status) * sortMultiplier;
+      default:
+        return 0;
+    }
+  });
+
+  return sortedItems;
+}
+
+function paginateArtists(items: ArtistDto[], page: number, pageSize: number) {
+  const total = items.length;
+  const totalPages = Math.max(Math.ceil(total / pageSize), 1);
+  const currentPage = Math.min(page, totalPages);
+  const startIndex = (currentPage - 1) * pageSize;
+
+  return {
+    items: items.slice(startIndex, startIndex + pageSize),
+    pagination: {
+      page: currentPage,
+      pageSize,
+      total,
+      totalPages,
+    },
+  };
+}
+
 export function listArtists(query: ListQueryDto): ArtistListResponseDto {
   const filteredItems = filterArtists(artistSeedRecords, query);
-  const startIndex = (query.page - 1) * query.pageSize;
-  const items = filteredItems.slice(startIndex, startIndex + query.pageSize);
+  const sortedItems = sortArtists(filteredItems, query.sortBy, query.sortDirection);
+  const paginatedItems = paginateArtists(sortedItems, query.page, query.pageSize);
 
   return artistListResponseDtoSchema.parse({
-    items,
+    items: paginatedItems.items,
     meta: {
       generatedAt: MOCK_GENERATED_AT,
     },
   });
 }
 
-export function buildArtistsDashboardResponse(query?: Pick<ListQueryDto, "q" | "status">): ArtistsDashboardResponseDto {
-  const items = filterArtists(artistSeedRecords, query);
+export function buildArtistsDashboardResponse(query?: Partial<ArtistsDashboardQuery>): ArtistsDashboardResponseDto {
+  const filteredItems = filterArtists(artistSeedRecords, query);
+  const sortedItems = sortArtists(filteredItems, query?.sortBy, query?.sortDirection);
+  const paginatedItems = paginateArtists(sortedItems, query?.page ?? DEFAULT_PAGE, query?.pageSize ?? 10);
 
   return artistsDashboardResponseDtoSchema.parse({
     summary: [
@@ -39,7 +82,8 @@ export function buildArtistsDashboardResponse(query?: Pick<ListQueryDto, "q" | "
       { id: "artists-pass-rate", label: "Auto-pass Rate", value: "94.2%", hint: "AI audit stable", tone: "success" },
       { id: "artists-quota", label: "API Quota", value: "8,420", hint: "YouTube Data v3", tone: "warning" },
     ],
-    items,
+    items: paginatedItems.items,
+    pagination: paginatedItems.pagination,
     meta: {
       generatedAt: MOCK_GENERATED_AT,
     },

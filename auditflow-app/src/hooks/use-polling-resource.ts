@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useReducer, useRef } from "react";
 
 type PollingData = {
   polling: {
@@ -13,26 +13,67 @@ type PollingData = {
 type UsePollingResourceOptions<T extends PollingData> = {
   initialData: T;
   load: (nextTick: number) => Promise<T>;
+  resetKey?: string | number;
 };
+
+type PollingState<T extends PollingData> = {
+  data: T;
+  error: Error | null;
+  isRefreshing: boolean;
+};
+
+type PollingAction<T extends PollingData> =
+  | { type: "reset"; data: T }
+  | { type: "refresh-start" }
+  | { type: "refresh-success"; data: T }
+  | { type: "refresh-error"; error: Error };
+
+function pollingReducer<T extends PollingData>(state: PollingState<T>, action: PollingAction<T>): PollingState<T> {
+  switch (action.type) {
+    case "reset":
+      return { data: action.data, error: null, isRefreshing: false };
+    case "refresh-start":
+      return { ...state, isRefreshing: true };
+    case "refresh-success":
+      return { data: action.data, error: null, isRefreshing: false };
+    case "refresh-error":
+      return { ...state, error: action.error, isRefreshing: false };
+    default:
+      return state;
+  }
+}
 
 export function usePollingResource<T extends PollingData>({
   initialData,
   load,
+  resetKey,
 }: UsePollingResourceOptions<T>) {
-  const [data, setData] = useState(initialData);
+  const [state, dispatch] = useReducer(pollingReducer<T>, {
+    data: initialData,
+    error: null,
+    isRefreshing: false,
+  });
+  const initialDataRef = useRef(initialData);
   const dataRef = useRef(initialData);
   const loadRef = useRef(load);
   const requestIdRef = useRef(0);
   const requestedTickRef = useRef(initialData.polling.tick);
 
   useEffect(() => {
+    initialDataRef.current = initialData;
+  }, [initialData]);
+
+  useEffect(() => {
     loadRef.current = load;
   }, [load]);
 
   useEffect(() => {
-    dataRef.current = data;
-    requestedTickRef.current = data.polling.tick;
-  }, [data]);
+    const nextInitialData = initialDataRef.current;
+    dataRef.current = nextInitialData;
+    requestedTickRef.current = nextInitialData.polling.tick;
+    requestIdRef.current = 0;
+    dispatch({ type: "reset", data: nextInitialData });
+  }, [resetKey]);
 
   useEffect(() => {
     if (dataRef.current.polling.terminal) {
@@ -50,15 +91,12 @@ export function usePollingResource<T extends PollingData>({
 
       const requestId = requestIdRef.current + 1;
       requestIdRef.current = requestId;
+      dispatch({ type: "refresh-start" });
 
-      void loadRef.current(nextTick).then((nextData) => {
-        if (requestId !== requestIdRef.current) {
-          return;
-        }
-
-        setData((currentData) => {
-          if (nextData.polling.tick < currentData.polling.tick) {
-            return currentData;
+      void loadRef.current(nextTick).then(
+        (nextData) => {
+          if (requestId !== requestIdRef.current || nextData.polling.tick < dataRef.current.polling.tick) {
+            return;
           }
 
           dataRef.current = nextData;
@@ -67,15 +105,25 @@ export function usePollingResource<T extends PollingData>({
             window.clearInterval(intervalId);
           }
 
-          return nextData;
-        });
-      });
-    }, initialData.polling.intervalMs);
+          dispatch({ type: "refresh-success", data: nextData });
+        },
+        (nextError: unknown) => {
+          if (requestId !== requestIdRef.current) {
+            return;
+          }
+
+          dispatch({
+            type: "refresh-error",
+            error: nextError instanceof Error ? nextError : new Error("Polling refresh failed"),
+          });
+        },
+      );
+    }, state.data.polling.intervalMs);
 
     return () => {
       window.clearInterval(intervalId);
     };
-  }, [initialData.polling.intervalMs]);
+  }, [state.data.polling.intervalMs, state.data.polling.terminal]);
 
-  return { data };
+  return state;
 }

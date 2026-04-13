@@ -1,4 +1,4 @@
-import type { PollingMetaDto, ResponseMetaDto, SummaryMetricDto } from "@/types/api";
+import type { PaginationMetaDto, PollingMetaDto, ResponseMetaDto, SummaryMetricDto } from "@/types/api";
 import type { StatusTone } from "@/types/common";
 
 export type QueueStatus = "queued" | "downloading" | "auditing" | "autoApproved" | "manualReview" | "autoRejected";
@@ -36,6 +36,7 @@ export type QueueListResponseDto = {
 export type QueueDashboardResponseDto = {
   summary: SummaryMetricDto[];
   items: QueueItemDto[];
+  pagination: PaginationMetaDto;
   meta: ResponseMetaDto;
   polling: PollingMetaDto;
 };

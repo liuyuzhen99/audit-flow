@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-import { dtoIdSchema, isoTimestampSchema, responseMetaDtoSchema, summaryMetricDtoSchema } from "@/lib/schemas/common";
+import { dtoIdSchema, isoTimestampSchema, paginationMetaDtoSchema, responseMetaDtoSchema, summaryMetricDtoSchema } from "@/lib/schemas/common";
 
 export const artistAuditStatusSchema = z.enum(["autoApproved", "manualReview", "autoRejected", "monitoring"]);
 
@@ -35,5 +35,6 @@ export const artistListResponseDtoSchema = z.object({
 export const artistsDashboardResponseDtoSchema = z.object({
   summary: z.array(summaryMetricDtoSchema),
   items: z.array(artistDtoSchema),
+  pagination: paginationMetaDtoSchema,
   meta: responseMetaDtoSchema,
 });

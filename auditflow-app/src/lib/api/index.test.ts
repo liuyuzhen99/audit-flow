@@ -15,24 +15,30 @@ function createFetchMock(payload: unknown) {
 
 describe("module api clients", () => {
   it("fetches artists dashboard data", async () => {
-    const fetchMock = createFetchMock({ summary: [], items: [], meta: { generatedAt: "2026-04-09T10:00:00.000Z" } });
-
-    await getArtistsDashboard({ fetcher: fetchMock, query: { q: "M83" } });
-
-    expect(fetchMock).toHaveBeenCalledWith("/api/mock/artists?q=M83", undefined);
-  });
-
-  it("fetches queue dashboard data with tick", async () => {
     const fetchMock = createFetchMock({
       summary: [],
       items: [],
+      pagination: { page: 1, pageSize: 10, total: 0, totalPages: 1 },
+      meta: { generatedAt: "2026-04-09T10:00:00.000Z" },
+    });
+
+    await getArtistsDashboard({ fetcher: fetchMock, query: { q: "M83", status: "monitoring" } });
+
+    expect(fetchMock).toHaveBeenCalledWith("/api/mock/artists?q=M83&status=monitoring", undefined);
+  });
+
+  it("fetches queue dashboard data with filters and tick", async () => {
+    const fetchMock = createFetchMock({
+      summary: [],
+      items: [],
+      pagination: { page: 1, pageSize: 10, total: 0, totalPages: 1 },
       meta: { generatedAt: "2026-04-09T10:00:00.000Z" },
       polling: { intervalMs: 4000, tick: 2, terminal: false },
     });
 
-    await getQueueDashboard({ fetcher: fetchMock, query: { tick: 2 } });
+    await getQueueDashboard({ fetcher: fetchMock, query: { q: "M83", status: "manualReview", tick: 2 } });
 
-    expect(fetchMock).toHaveBeenCalledWith("/api/mock/queue?tick=2", undefined);
+    expect(fetchMock).toHaveBeenCalledWith("/api/mock/queue?q=M83&status=manualReview&tick=2", undefined);
   });
 
   it("fetches pipeline dashboard data with tick", async () => {

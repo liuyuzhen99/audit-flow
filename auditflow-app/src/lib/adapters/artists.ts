@@ -1,3 +1,4 @@
+import type { PaginationMetaDto } from "@/types/api";
 import type { ModuleSummary } from "@/types/common";
 import type { ArtistsDashboardResponseDto, ArtistTableRowViewModel } from "@/types/artist";
 
@@ -49,9 +50,11 @@ function adaptArtistRow(item: ArtistsDashboardResponseDto["items"][number]): Art
 export function adaptArtistsDashboard(data: ArtistsDashboardResponseDto): {
   summary: ModuleSummary[];
   rows: ArtistTableRowViewModel[];
+  pagination: PaginationMetaDto;
 } {
   return {
     summary: data.summary,
     rows: data.items.map(adaptArtistRow),
+    pagination: data.pagination,
   };
 }

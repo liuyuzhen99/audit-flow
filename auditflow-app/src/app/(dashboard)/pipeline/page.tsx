@@ -1,12 +1,9 @@
-import { EmptyState } from "@/components/shared/empty-state";
-import { StatCard } from "@/components/shared/stat-card";
-import { StatusBadge } from "@/components/shared/status-badge";
+import { PipelineDashboardClient } from "@/components/features/pipeline/pipeline-dashboard-client";
 import { adaptPipelineDashboard } from "@/lib/adapters/pipeline";
 import { buildPipelineDashboardResponse } from "@/lib/mocks/sources/pipeline";
 
 export default async function PipelinePage() {
-  const dashboard = adaptPipelineDashboard(buildPipelineDashboardResponse({ tick: 0 }));
-  const activeJob = dashboard.activeJob;
+  const dashboard = adaptPipelineDashboard(buildPipelineDashboardResponse({ tick: 2 }));
 
   return (
     <section className="space-y-6">
@@ -27,111 +24,7 @@ export default async function PipelinePage() {
         </div>
       </div>
 
-      <div className="grid gap-4 xl:grid-cols-4">
-        {dashboard.summary.map((stat) => (
-          <StatCard key={stat.label} label={stat.label} value={stat.value} hint={stat.hint} tone={stat.tone} />
-        ))}
-      </div>
-
-      {activeJob ? (
-        <div className="grid gap-6 xl:grid-cols-[0.9fr_1.1fr]">
-          <section className="space-y-4 rounded-[28px] border border-[var(--color-border)] bg-white p-6 shadow-[0_10px_24px_rgba(15,23,42,0.05)]">
-            <div className="flex items-center justify-between gap-4">
-              <div>
-                <p className="text-sm text-slate-400">Task List</p>
-                <h2 className="text-2xl font-semibold text-slate-900">{activeJob.title}</h2>
-              </div>
-              <StatusBadge label={activeJob.statusLabel} tone={activeJob.statusTone} />
-            </div>
-
-            <div className="grid gap-3 md:grid-cols-2">
-              <div className="rounded-[24px] border border-[var(--color-border)] bg-slate-50 px-5 py-4">
-                <p className="text-sm text-slate-400">Elapsed</p>
-                <p className="mt-2 text-lg font-semibold text-slate-900">{activeJob.elapsedLabel}</p>
-              </div>
-              <div className="rounded-[24px] border border-[var(--color-border)] bg-slate-50 px-5 py-4">
-                <p className="text-sm text-slate-400">Remaining</p>
-                <p className="mt-2 text-lg font-semibold text-slate-900">{activeJob.remainingLabel}</p>
-              </div>
-            </div>
-
-            <div className="space-y-4 rounded-[24px] border border-[var(--color-border)] bg-slate-50 px-5 py-6">
-              {activeJob.stages.map((stage) => (
-                <div key={stage.id} className="flex items-center gap-4">
-                  <span className="h-4 w-4 rounded-full border-2 border-current text-[var(--color-primary)]" />
-                  <div className="flex items-center gap-3">
-                    <p className="font-semibold text-slate-800">{stage.label}</p>
-                    <StatusBadge label={stage.statusLabel} tone={stage.statusTone} />
-                  </div>
-                </div>
-              ))}
-            </div>
-
-            <div className="space-y-3">
-              <p className="text-sm font-semibold text-slate-500">Queued & Recent Jobs</p>
-              {dashboard.jobs.map((job) => (
-                <div
-                  key={job.id}
-                  className="flex items-center justify-between rounded-2xl border border-[var(--color-border)] px-4 py-4"
-                >
-                  <div>
-                    <p className="font-semibold text-slate-900">{job.title}</p>
-                    <p className="mt-1 text-sm text-slate-500">
-                      Elapsed {job.elapsedLabel} · Remaining {job.remainingLabel}
-                    </p>
-                  </div>
-                  <StatusBadge label={job.statusLabel} tone={job.statusTone} />
-                </div>
-              ))}
-            </div>
-          </section>
-
-          <div className="grid gap-6 xl:grid-cols-[1fr_250px]">
-            <section className="rounded-[28px] bg-[#0d1117] p-6 text-sm text-slate-200 shadow-[0_10px_24px_rgba(15,23,42,0.18)]">
-              <div className="mb-4 flex items-center justify-between text-white">
-                <h2 className="text-lg font-semibold">Live Execution Log</h2>
-                <button className="text-sm text-slate-400">Clear Console</button>
-              </div>
-              <div className="space-y-3 font-mono">
-                {activeJob.logs.map((line) => (
-                  <p key={line.id} className={line.toneClassName}>
-                    {line.displayLine}
-                  </p>
-                ))}
-                {!dashboard.polling.terminal ? (
-                  <p className="text-indigo-400">• Streaming realtime console data...</p>
-                ) : null}
-              </div>
-            </section>
-
-            <section className="space-y-4 rounded-[28px] border border-[var(--color-border)] bg-white p-5 shadow-[0_10px_24px_rgba(15,23,42,0.05)]">
-              <h2 className="text-lg font-semibold text-slate-900">Deliverables</h2>
-              <div className="space-y-3">
-                {activeJob.deliverables.map((item) => (
-                  <div key={item.id} className="rounded-2xl border border-[var(--color-border)] px-4 py-4">
-                    <div className="flex items-center justify-between gap-3">
-                      <p className="font-semibold text-slate-900">{item.label}</p>
-                      <StatusBadge label={item.statusLabel} tone={item.statusTone} />
-                    </div>
-                    <p className="mt-1 text-sm text-slate-500">{item.description}</p>
-                  </div>
-                ))}
-              </div>
-              <button className="w-full rounded-2xl bg-[var(--color-primary)] px-4 py-3 text-sm font-semibold text-white">
-                Open in Library
-              </button>
-              <button className="w-full rounded-2xl border border-rose-200 px-4 py-3 text-sm font-semibold text-rose-600">
-                Stop Current Task
-              </button>
-            </section>
-          </div>
-        </div>
-      ) : (
-        <EmptyState
-          title="No active pipeline job"
-          description="All pipeline runs are complete. Create a new task to start another processing flow."
-        />
-      )}
+      <PipelineDashboardClient initialDashboard={dashboard} />
     </section>
   );
 }

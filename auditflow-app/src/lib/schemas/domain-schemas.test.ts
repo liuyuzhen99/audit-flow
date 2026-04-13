@@ -34,6 +34,12 @@ describe("artist schema", () => {
     const parsed = artistsDashboardResponseDtoSchema.parse({
       summary: [],
       items: [],
+      pagination: {
+        page: 1,
+        pageSize: 10,
+        total: 0,
+        totalPages: 1,
+      },
       meta: {
         generatedAt: "2026-04-09T10:00:00.000Z",
       },
@@ -71,6 +77,12 @@ describe("queue schema", () => {
     const parsed = queueDashboardResponseDtoSchema.parse({
       summary: [],
       items: [],
+      pagination: {
+        page: 1,
+        pageSize: 10,
+        total: 0,
+        totalPages: 1,
+      },
       meta: {
         generatedAt: "2026-04-09T10:00:00.000Z",
       },

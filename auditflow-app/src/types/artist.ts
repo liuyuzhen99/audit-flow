@@ -1,4 +1,4 @@
-import type { SummaryMetricDto, ResponseMetaDto } from "@/types/api";
+import type { PaginationMetaDto, ResponseMetaDto, SummaryMetricDto } from "@/types/api";
 import type { StatusTone } from "@/types/common";
 
 export type ArtistAuditStatus = "autoApproved" | "manualReview" | "autoRejected" | "monitoring";
@@ -34,6 +34,7 @@ export type ArtistListResponseDto = {
 export type ArtistsDashboardResponseDto = {
   summary: SummaryMetricDto[];
   items: ArtistDto[];
+  pagination: PaginationMetaDto;
   meta: ResponseMetaDto;
 };
 

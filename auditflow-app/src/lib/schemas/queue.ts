@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-import { dtoIdSchema, isoTimestampSchema, pollingMetaDtoSchema, responseMetaDtoSchema, summaryMetricDtoSchema } from "@/lib/schemas/common";
+import { dtoIdSchema, isoTimestampSchema, paginationMetaDtoSchema, pollingMetaDtoSchema, responseMetaDtoSchema, summaryMetricDtoSchema } from "@/lib/schemas/common";
 
 export const queueStatusSchema = z.enum(["queued", "downloading", "auditing", "autoApproved", "manualReview", "autoRejected"]);
 export const auditDecisionStatusSchema = z.enum(["pending", "approved", "manualReview", "rejected"]);
@@ -37,6 +37,7 @@ export const queueListResponseDtoSchema = z.object({
 export const queueDashboardResponseDtoSchema = z.object({
   summary: z.array(summaryMetricDtoSchema),
   items: z.array(queueItemDtoSchema),
+  pagination: paginationMetaDtoSchema,
   meta: responseMetaDtoSchema,
   polling: pollingMetaDtoSchema,
 });

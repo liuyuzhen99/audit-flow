@@ -1,3 +1,4 @@
+import type { PaginationMetaDto } from "@/types/api";
 import type { ModuleSummary } from "@/types/common";
 import type { QueueDashboardResponseDto, QueueTableRowViewModel } from "@/types/queue";
 
@@ -35,11 +36,13 @@ function adaptQueueRow(item: QueueDashboardResponseDto["items"][number]): QueueT
 export function adaptQueueDashboard(data: QueueDashboardResponseDto): {
   summary: ModuleSummary[];
   rows: QueueTableRowViewModel[];
+  pagination: PaginationMetaDto;
   polling: QueueDashboardResponseDto["polling"];
 } {
   return {
     summary: data.summary,
     rows: data.items.map(adaptQueueRow),
+    pagination: data.pagination,
     polling: data.polling,
   };
 }

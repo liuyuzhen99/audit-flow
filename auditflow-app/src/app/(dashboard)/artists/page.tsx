@@ -1,12 +1,33 @@
-import { PageToolbar } from "@/components/shared/page-toolbar";
-import { SearchInput } from "@/components/shared/search-input";
+import { ArtistsDashboardClient } from "@/components/features/artists/artists-dashboard-client";
 import { StatCard } from "@/components/shared/stat-card";
-import { StatusBadge } from "@/components/shared/status-badge";
 import { adaptArtistsDashboard } from "@/lib/adapters/artists";
 import { buildArtistsDashboardResponse } from "@/lib/mocks/sources/artists";
+import { readListQuery } from "@/lib/query/list-query";
 
-export default async function ArtistsPage() {
-  const dashboard = adaptArtistsDashboard(buildArtistsDashboardResponse());
+type ArtistsPageProps = {
+  searchParams?: Promise<Record<string, string | string[] | undefined>>;
+};
+
+function normalizeSearchParams(rawSearchParams: Record<string, string | string[] | undefined> | undefined) {
+  const searchParams = new URLSearchParams();
+
+  if (!rawSearchParams) {
+    return searchParams;
+  }
+
+  for (const [key, value] of Object.entries(rawSearchParams)) {
+    if (typeof value === "string") {
+      searchParams.set(key, value);
+    }
+  }
+
+  return searchParams;
+}
+
+export default async function ArtistsPage({ searchParams }: ArtistsPageProps = {}) {
+  const resolvedSearchParams = normalizeSearchParams(searchParams ? await searchParams : undefined);
+  const query = readListQuery(resolvedSearchParams);
+  const dashboard = adaptArtistsDashboard(buildArtistsDashboardResponse(query));
 
   return (
     <section className="space-y-6">
@@ -27,40 +48,7 @@ export default async function ArtistsPage() {
         ))}
       </div>
 
-      <PageToolbar
-        left={<SearchInput placeholder="Search artists or YouTube channels..." />}
-        right={
-          <>
-            <button className="rounded-2xl border border-[var(--color-border)] px-4 py-3 text-sm font-semibold text-slate-700">Recent 2 Weeks</button>
-            <button className="rounded-2xl border border-[var(--color-border)] px-4 py-3 text-sm font-semibold text-slate-700">Filter</button>
-            <button className="rounded-2xl bg-[var(--color-primary)] px-5 py-3 text-sm font-semibold text-white shadow-sm">Bulk Download</button>
-          </>
-        }
-      />
-
-      <section className="overflow-hidden rounded-[28px] border border-[var(--color-border)] bg-white shadow-[0_10px_24px_rgba(15,23,42,0.05)]">
-        <div className="grid grid-cols-[1.8fr_1.1fr_1.4fr_1fr_1.2fr] gap-4 border-b border-[var(--color-border)] px-6 py-5 text-sm font-semibold text-slate-500">
-          <span>Artist</span>
-          <span>Spotify Followers</span>
-          <span>YouTube Channel</span>
-          <span>Recent Releases</span>
-          <span>Audit Status</span>
-        </div>
-        <div>
-          {dashboard.rows.map((row) => (
-            <div key={row.id} className="grid grid-cols-[1.8fr_1.1fr_1.4fr_1fr_1.2fr] gap-4 border-b border-[var(--color-border)] px-6 py-5 last:border-b-0">
-              <div>
-                <p className="text-lg font-semibold text-slate-900">{row.name}</p>
-                <p className="text-sm text-slate-500">{row.freshnessLabel}</p>
-              </div>
-              <p className="text-base font-semibold text-slate-800">{row.followerLabel}</p>
-              <p className="text-base text-slate-700">{row.channelLabel}</p>
-              <p className="text-base font-medium text-indigo-600">{row.releasesLabel}</p>
-              <StatusBadge label={row.statusLabel} tone={row.statusTone} />
-            </div>
-          ))}
-        </div>
-      </section>
+      <ArtistsDashboardClient pagination={dashboard.pagination} rows={dashboard.rows} />
     </section>
   );
 }
