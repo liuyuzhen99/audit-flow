@@ -15,11 +15,19 @@ export default async function PipelinePage() {
           </p>
         </div>
         <div className="flex gap-3">
-          <button className="rounded-2xl border border-[var(--color-border)] px-5 py-3 text-sm font-semibold text-slate-700">
-            Resume Paused
+          <button
+            className="rounded-2xl border border-[var(--color-border)] px-5 py-3 text-sm font-semibold text-slate-400 cursor-not-allowed"
+            disabled
+            title="Resume workflow controls are coming in a later phase"
+          >
+            Resume Paused (Later)
           </button>
-          <button className="rounded-2xl bg-[var(--color-primary)] px-5 py-3 text-sm font-semibold text-white shadow-sm">
-            Create Task
+          <button
+            className="rounded-2xl bg-slate-200 px-5 py-3 text-sm font-semibold text-slate-400 cursor-not-allowed"
+            disabled
+            title="Task creation flow is coming in a later phase"
+          >
+            Create Task (Later)
           </button>
         </div>
       </div>

@@ -27,7 +27,10 @@ function normalizeSearchParams(rawSearchParams: Record<string, string | string[]
 export default async function ArtistsPage({ searchParams }: ArtistsPageProps = {}) {
   const resolvedSearchParams = normalizeSearchParams(searchParams ? await searchParams : undefined);
   const query = readListQuery(resolvedSearchParams);
-  const dashboard = adaptArtistsDashboard(buildArtistsDashboardResponse(query));
+  // dateRange is Artists-scoped — read separately, not via shared parseListQueryParams
+  const rawDateRange = resolvedSearchParams.get("dateRange");
+  const dateRange = rawDateRange === "2w" ? "2w" : undefined;
+  const dashboard = adaptArtistsDashboard(buildArtistsDashboardResponse({ ...query, dateRange }));
 
   return (
     <section className="space-y-6">

@@ -63,4 +63,47 @@ describe("ArtistsDashboardClient", () => {
     fireEvent.change(screen.getByLabelText("Rows Per Page"), { target: { value: "20" } });
     expect(mockReplace).toHaveBeenLastCalledWith("/artists?pageSize=20");
   });
+
+  it("toggles Recent 2 Weeks in the URL", async () => {
+    const { ArtistsDashboardClient } = await import("@/components/features/artists/artists-dashboard-client");
+
+    render(
+      <ArtistsDashboardClient
+        rows={[]}
+        pagination={{ page: 1, pageSize: 10, total: 0, totalPages: 1 }}
+      />,
+    );
+
+    fireEvent.click(screen.getByRole("button", { name: "Recent 2 Weeks" }));
+
+    expect(mockReplace).toHaveBeenCalledWith("/artists?dateRange=2w");
+  });
+
+  it("updates status filter in the URL", async () => {
+    const { ArtistsDashboardClient } = await import("@/components/features/artists/artists-dashboard-client");
+
+    render(
+      <ArtistsDashboardClient
+        rows={[]}
+        pagination={{ page: 1, pageSize: 10, total: 0, totalPages: 1 }}
+      />,
+    );
+
+    fireEvent.click(screen.getByRole("button", { name: "Review" }));
+
+    expect(mockReplace).toHaveBeenCalledWith("/artists?status=manualReview");
+  });
+
+  it("renders Bulk Download as a disabled Phase 5 action", async () => {
+    const { ArtistsDashboardClient } = await import("@/components/features/artists/artists-dashboard-client");
+
+    render(
+      <ArtistsDashboardClient
+        rows={[]}
+        pagination={{ page: 1, pageSize: 10, total: 0, totalPages: 1 }}
+      />,
+    );
+
+    expect(screen.getByRole("button", { name: "Bulk Download (Phase 5)" })).toBeDisabled();
+  });
 });

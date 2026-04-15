@@ -24,6 +24,8 @@ export const queueItemDtoSchema = z.object({
   status: queueStatusSchema,
   auditDecision: auditDecisionDtoSchema,
   progress: queueProgressDtoSchema,
+  /** Populated once the item reaches a terminal approved/review state */
+  reportId: z.string().nullable(),
   submittedAt: isoTimestampSchema,
   updatedAt: isoTimestampSchema,
 });

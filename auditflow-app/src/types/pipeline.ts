@@ -16,6 +16,7 @@ export type PipelineStageDto = {
 export type PipelineLogEntryDto = {
   id: string;
   timestamp: string;
+  tick: number;
   level: PipelineLogLevel;
   message: string;
 };
@@ -25,6 +26,7 @@ export type PipelineDeliverableDto = {
   label: string;
   status: DeliverableStatus;
   description: string;
+  assetId: string | null;
 };
 
 export type PipelineJobDto = {
@@ -77,6 +79,7 @@ export type PipelineStageViewModel = {
 
 export type PipelineLogEntryViewModel = {
   id: string;
+  tick: number;
   displayLine: string;
   toneClassName: string;
 };
@@ -85,6 +88,7 @@ export type PipelineDeliverableViewModel = {
   id: string;
   label: string;
   description: string;
+  assetId: string | null;
   statusLabel: string;
   statusTone: "success" | "warning" | "danger" | "info" | "neutral";
 };

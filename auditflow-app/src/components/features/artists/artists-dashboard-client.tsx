@@ -1,5 +1,6 @@
 "use client";
 
+import { useSearchParams } from "next/navigation";
 import type { PaginationMetaDto } from "@/types/api";
 import { createColumnHelper } from "@tanstack/react-table";
 
@@ -45,13 +46,28 @@ const columns = [
   }),
 ];
 
+const statusOptions = [
+  { label: "All", value: undefined },
+  { label: "Approved", value: "autoApproved" },
+  { label: "Review", value: "manualReview" },
+  { label: "Rejected", value: "autoRejected" },
+  { label: "Monitoring", value: "monitoring" },
+] as const;
+
 type ArtistsDashboardClientProps = {
   rows: ArtistTableRowViewModel[];
   pagination: PaginationMetaDto;
 };
 
 export function ArtistsDashboardClient({ rows, pagination }: ArtistsDashboardClientProps) {
-  const { query, searchValue, setPage, setPageSize, setSearchValue, setSort } = useListQueryState();
+  const { query, searchValue, setPage, setPageSize, setSearchValue, setSort, setStatus, setFilter } = useListQueryState();
+  // Read module-specific dateRange from URL — lives outside shared ListQueryDto
+  const searchParams = useSearchParams();
+  const isDateRangeActive = searchParams.get("dateRange") === "2w";
+
+  const toggleDateRange = () => {
+    setFilter("dateRange", isDateRangeActive ? undefined : "2w");
+  };
 
   return (
     <section className="space-y-6">
@@ -65,14 +81,45 @@ export function ArtistsDashboardClient({ rows, pagination }: ArtistsDashboardCli
         }
         right={
           <>
-            <button className="rounded-2xl border border-[var(--color-border)] px-4 py-3 text-sm font-semibold text-slate-700">
+            {/* Date range toggle */}
+            <button
+              className={isDateRangeActive
+                ? "rounded-2xl bg-[rgba(99,102,241,0.12)] px-4 py-3 text-sm font-semibold text-[var(--color-primary)]"
+                : "rounded-2xl border border-[var(--color-border)] px-4 py-3 text-sm font-semibold text-slate-700"
+              }
+              onClick={toggleDateRange}
+              type="button"
+            >
               Recent 2 Weeks
             </button>
-            <button className="rounded-2xl border border-[var(--color-border)] px-4 py-3 text-sm font-semibold text-slate-700">
-              Filter
-            </button>
-            <button className="rounded-2xl bg-[var(--color-primary)] px-5 py-3 text-sm font-semibold text-white shadow-sm">
-              Bulk Download
+
+            {/* Status filter buttons */}
+            {statusOptions.map((option) => {
+              const isActive = (query.status ?? undefined) === option.value;
+
+              return (
+                <button
+                  className={isActive
+                    ? "rounded-2xl bg-[rgba(99,102,241,0.12)] px-4 py-3 text-sm font-semibold text-[var(--color-primary)]"
+                    : "rounded-2xl border border-[var(--color-border)] px-4 py-3 text-sm font-semibold text-slate-700"
+                  }
+                  key={option.label}
+                  onClick={() => setStatus(option.value)}
+                  type="button"
+                >
+                  {option.label}
+                </button>
+              );
+            })}
+
+            {/* Bulk Download — gated to Phase 5 until row selection is available */}
+            <button
+              className="rounded-2xl bg-slate-200 px-5 py-3 text-sm font-semibold text-slate-400 cursor-not-allowed"
+              disabled
+              title="Row selection will be added in Phase 5. Bulk Download requires an explicit selection to avoid operating on an invisible filter set."
+              type="button"
+            >
+              Bulk Download (Phase 5)
             </button>
           </>
         }

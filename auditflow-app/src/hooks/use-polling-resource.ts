@@ -58,6 +58,9 @@ export function usePollingResource<T extends PollingData>({
   const loadRef = useRef(load);
   const requestIdRef = useRef(0);
   const requestedTickRef = useRef(initialData.polling.tick);
+  // Tracks the current interval duration without causing the effect to re-run.
+  // Prevents a missed tick when the server returns a different intervalMs.
+  const intervalMsRef = useRef(initialData.polling.intervalMs);
 
   useEffect(() => {
     initialDataRef.current = initialData;
@@ -70,6 +73,7 @@ export function usePollingResource<T extends PollingData>({
   useEffect(() => {
     const nextInitialData = initialDataRef.current;
     dataRef.current = nextInitialData;
+    intervalMsRef.current = nextInitialData.polling.intervalMs;
     requestedTickRef.current = nextInitialData.polling.tick;
     requestIdRef.current = 0;
     dispatch({ type: "reset", data: nextInitialData });
@@ -100,6 +104,8 @@ export function usePollingResource<T extends PollingData>({
           }
 
           dataRef.current = nextData;
+          // Keep intervalMs ref in sync so the next tick uses the updated interval
+          intervalMsRef.current = nextData.polling.intervalMs;
 
           if (nextData.polling.terminal) {
             window.clearInterval(intervalId);
@@ -118,12 +124,13 @@ export function usePollingResource<T extends PollingData>({
           });
         },
       );
-    }, state.data.polling.intervalMs);
+    // Only depend on terminal flag — intervalMs changes are handled via ref to avoid missed ticks
+    }, intervalMsRef.current);
 
     return () => {
       window.clearInterval(intervalId);
     };
-  }, [state.data.polling.intervalMs, state.data.polling.terminal]);
+  }, [state.data.polling.terminal]);
 
   return state;
 }

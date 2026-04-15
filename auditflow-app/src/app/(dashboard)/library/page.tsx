@@ -38,11 +38,19 @@ export default async function LibraryPage({ searchParams }: LibraryPageProps = {
           </p>
         </div>
         <div className="flex gap-3">
-          <button className="rounded-2xl border border-[var(--color-border)] px-5 py-3 text-sm font-semibold text-slate-700">
-            Grid View
+          <button
+            className="rounded-2xl border border-[var(--color-border)] px-5 py-3 text-sm font-semibold text-slate-400 cursor-not-allowed"
+            disabled
+            title="List view coming in Phase 5"
+          >
+            Grid View (Phase 5)
           </button>
-          <button className="rounded-2xl bg-[var(--color-primary)] px-5 py-3 text-sm font-semibold text-white shadow-sm">
-            Refresh Sync
+          <button
+            className="rounded-2xl bg-slate-200 px-5 py-3 text-sm font-semibold text-slate-400 cursor-not-allowed"
+            disabled
+            title="Manual sync trigger coming in Phase 5"
+          >
+            Refresh Sync (Phase 5)
           </button>
         </div>
       </div>

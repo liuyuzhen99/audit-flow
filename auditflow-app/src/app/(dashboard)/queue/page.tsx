@@ -1,3 +1,5 @@
+import Link from "next/link";
+
 import { QueueDashboardClient } from "@/components/features/queue/queue-dashboard-client";
 import { adaptQueueDashboard } from "@/lib/adapters/queue";
 import { buildQueueDashboardResponse } from "@/lib/mocks/sources/queue";
@@ -38,8 +40,20 @@ export default async function QueuePage({ searchParams }: QueuePageProps = {}) {
           </p>
         </div>
         <div className="flex gap-3">
-          <button className="rounded-2xl border border-[var(--color-border)] px-5 py-3 text-sm font-semibold text-slate-700">Export Report</button>
-          <button className="rounded-2xl bg-[var(--color-primary)] px-5 py-3 text-sm font-semibold text-white shadow-sm">Route to Pipeline</button>
+          {/* Export Report — Phase-5-gated; no report route exists yet */}
+          <button
+            className="rounded-2xl border border-[var(--color-border)] px-5 py-3 text-sm font-semibold text-slate-400 cursor-not-allowed"
+            disabled
+            title="Export Report coming in Phase 5"
+          >
+            Export Report (Phase 5)
+          </button>
+          <Link
+            className="rounded-2xl bg-[var(--color-primary)] px-5 py-3 text-sm font-semibold text-white shadow-sm hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-primary)]"
+            href="/pipeline"
+          >
+            Route to Pipeline
+          </Link>
         </div>
       </div>
 

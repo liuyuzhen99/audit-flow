@@ -3,6 +3,11 @@ import type { QueueItemDto, QueueStatus } from "@/types/queue";
 import type { QueueSeedRecord } from "@/lib/mocks/data/queue";
 
 const queueTimeline: QueueStatus[] = ["queued", "downloading", "auditing", "autoApproved"];
+const terminalQueueStatuses: QueueStatus[] = ["autoApproved", "manualReview", "autoRejected"];
+
+function isTerminalQueueStatus(status: QueueStatus): boolean {
+  return terminalQueueStatuses.includes(status);
+}
 
 function getQueueStatusAtStep(seed: QueueSeedRecord, tick: number): QueueStatus {
   const step = seed.startedAtStep + tick;
@@ -108,6 +113,8 @@ export function simulateQueueItem(seed: QueueSeedRecord, tick: number): QueueIte
     status,
     auditDecision: getAuditDecision(status),
     progress: getQueueProgress(status),
+    // reportId is only surfaced once the item reaches a terminal state
+    reportId: isTerminalQueueStatus(status) ? seed.reportId : null,
     submittedAt: seed.submittedAt,
     updatedAt: getUpdatedAt(seed.submittedAt, tick),
   };

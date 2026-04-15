@@ -93,4 +93,20 @@ describe("useListQueryState", () => {
 
     expect(mockReplace).toHaveBeenCalledWith("/artists?pageSize=20");
   });
+
+  it("updates a module-specific filter and resets page", () => {
+    mockSearchParams.current = new URLSearchParams(
+      "page=3&pageSize=20&q=midnight&status=queued&sortBy=updatedAt&sortDirection=desc",
+    );
+
+    const { result } = renderHook(() => useListQueryState({ debounceMs: 300 }));
+
+    act(() => {
+      result.current.setFilter("dateRange", "2w");
+    });
+
+    expect(mockReplace).toHaveBeenCalledWith(
+      "/artists?pageSize=20&q=midnight&status=queued&sortBy=updatedAt&sortDirection=desc&dateRange=2w",
+    );
+  });
 });

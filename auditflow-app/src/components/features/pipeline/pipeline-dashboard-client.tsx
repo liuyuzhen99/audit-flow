@@ -1,10 +1,13 @@
 "use client";
 
+import { useMemo, useRef, useState } from "react";
+import Link from "next/link";
+
 import { ErrorState } from "@/components/shared/error-state";
 import { EmptyState } from "@/components/shared/empty-state";
 import { StatCard } from "@/components/shared/stat-card";
 import { StatusBadge } from "@/components/shared/status-badge";
-import { getPipelineDashboard } from "@/lib/api/pipeline";
+import { getPipelineDashboard, stopPipelineJob } from "@/lib/api/pipeline";
 import { adaptPipelineDashboard } from "@/lib/adapters/pipeline";
 import { usePollingResource } from "@/hooks/use-polling-resource";
 
@@ -15,6 +18,12 @@ type PipelineDashboardClientProps = {
 };
 
 export function PipelineDashboardClient({ initialDashboard }: PipelineDashboardClientProps) {
+  const [stopState, setStopState] = useState<"idle" | "pending" | "success" | "error">("idle");
+  const [stopMessage, setStopMessage] = useState<string>("");
+  // Keep the latest clear-console cutoff without triggering re-renders on every poll
+  const clearedAtTickRef = useRef<number>(-1);
+  const [renderCount, forceRender] = useState(0);
+
   const { data, error, isRefreshing } = usePollingResource({
     initialData: initialDashboard,
     load: async (nextTick) => adaptPipelineDashboard(await getPipelineDashboard({ query: { tick: nextTick } })),
@@ -22,6 +31,44 @@ export function PipelineDashboardClient({ initialDashboard }: PipelineDashboardC
   });
 
   const activeJob = data.activeJob;
+
+  const openInLibraryHref = useMemo(() => {
+    const linkedDeliverable = activeJob?.deliverables.find((item) => item.assetId);
+    return linkedDeliverable?.assetId ? `/library/${linkedDeliverable.assetId}` : null;
+  }, [activeJob]);
+
+  const visibleLogs = useMemo(() => {
+    if (!activeJob) {
+      return [];
+    }
+
+    return activeJob.logs.filter((line) => line.tick > clearedAtTickRef.current);
+    // renderCount is included so the memo re-runs after Clear Console updates the ref
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeJob, data.polling.tick, renderCount]);
+
+  const handleClearConsole = () => {
+    clearedAtTickRef.current = data.polling.tick;
+    forceRender((value) => value + 1);
+  };
+
+  const handleStopCurrentTask = async () => {
+    if (!activeJob || stopState === "pending") {
+      return;
+    }
+
+    setStopState("pending");
+    setStopMessage("");
+
+    try {
+      const response = await stopPipelineJob({ jobId: activeJob.id });
+      setStopState("success");
+      setStopMessage(response.message);
+    } catch (stopError) {
+      setStopState("error");
+      setStopMessage(stopError instanceof Error ? stopError.message : "Failed to stop pipeline job");
+    }
+  };
 
   return (
     <section className="space-y-6">
@@ -100,14 +147,17 @@ export function PipelineDashboardClient({ initialDashboard }: PipelineDashboardC
             <section className="rounded-[28px] bg-[#0d1117] p-6 text-sm text-slate-200 shadow-[0_10px_24px_rgba(15,23,42,0.18)]">
               <div className="mb-4 flex items-center justify-between text-white">
                 <h2 className="text-lg font-semibold">Live Execution Log</h2>
-                <button className="text-sm text-slate-400">Clear Console</button>
+                <button className="text-sm text-slate-400 hover:text-slate-200" onClick={handleClearConsole} type="button">
+                  Clear Console
+                </button>
               </div>
               <div className="space-y-3 font-mono">
-                {activeJob.logs.map((line) => (
+                {visibleLogs.map((line) => (
                   <p key={line.id} className={line.toneClassName}>
                     {line.displayLine}
                   </p>
                 ))}
+                {!visibleLogs.length ? <p className="text-slate-500">Console cleared. New log lines will appear here.</p> : null}
                 {!data.polling.terminal ? <p className="text-indigo-400">• Streaming realtime console data...</p> : null}
               </div>
             </section>
@@ -125,12 +175,36 @@ export function PipelineDashboardClient({ initialDashboard }: PipelineDashboardC
                   </div>
                 ))}
               </div>
-              <button className="w-full rounded-2xl bg-[var(--color-primary)] px-4 py-3 text-sm font-semibold text-white">
-                Open in Library
+
+              {openInLibraryHref ? (
+                <Link
+                  className="block w-full rounded-2xl bg-[var(--color-primary)] px-4 py-3 text-center text-sm font-semibold text-white hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-primary)]"
+                  href={openInLibraryHref}
+                >
+                  Open in Library
+                </Link>
+              ) : (
+                <button
+                  className="w-full cursor-not-allowed rounded-2xl bg-slate-200 px-4 py-3 text-sm font-semibold text-slate-400"
+                  disabled
+                  type="button"
+                >
+                  Open in Library
+                </button>
+              )}
+
+              <button
+                className="w-full rounded-2xl border border-rose-200 px-4 py-3 text-sm font-semibold text-rose-600 disabled:cursor-not-allowed disabled:opacity-60"
+                disabled={stopState === "pending"}
+                onClick={handleStopCurrentTask}
+                type="button"
+              >
+                {stopState === "pending" ? "Stopping..." : "Stop Current Task"}
               </button>
-              <button className="w-full rounded-2xl border border-rose-200 px-4 py-3 text-sm font-semibold text-rose-600">
-                Stop Current Task
-              </button>
+
+              {stopMessage ? (
+                <p className={stopState === "error" ? "text-sm text-rose-600" : "text-sm text-emerald-600"}>{stopMessage}</p>
+              ) : null}
             </section>
           </div>
         </div>

@@ -2,6 +2,7 @@ import { DEFAULT_PAGE, DEFAULT_PAGE_SIZE, type ListQueryDto, type SortDirection,
 
 type CreateListQuerySearchParamsOptions = {
   includeTick?: boolean;
+  extraEntries?: Array<[key: string, value: string]>;
 };
 
 type ListQueryPatch = Partial<ListQueryDto>;
@@ -44,6 +45,13 @@ export function createListQuerySearchParams(
 
   if (options.includeTick && query.tick !== undefined) {
     searchParams.set("tick", String(query.tick));
+  }
+
+  // Append module-specific extra params (e.g. dateRange for Artists)
+  if (options.extraEntries) {
+    for (const [key, value] of options.extraEntries) {
+      searchParams.set(key, value);
+    }
   }
 
   return searchParams;

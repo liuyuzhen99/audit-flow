@@ -26,9 +26,33 @@ export function useListQueryState({ debounceMs = 300 }: UseListQueryStateOptions
   const queryRef = useRef(query);
   const searchValue = pendingSearchValue ?? (query.q ?? "");
 
+  // Track extra module-specific filter params (e.g. dateRange for Artists)
+  const extraFiltersRef = useRef<Map<string, string>>(new Map());
+
   useEffect(() => {
     queryRef.current = query;
   }, [query]);
+
+  useEffect(() => {
+    const nextExtraFilters = new Map<string, string>();
+    const currentSearchParams = new URLSearchParams(searchParams.toString());
+
+    for (const [key, value] of currentSearchParams.entries()) {
+      if (
+        key !== "page" &&
+        key !== "pageSize" &&
+        key !== "q" &&
+        key !== "status" &&
+        key !== "sortBy" &&
+        key !== "sortDirection" &&
+        key !== "tick"
+      ) {
+        nextExtraFilters.set(key, value);
+      }
+    }
+
+    extraFiltersRef.current = nextExtraFilters;
+  }, [searchParams]);
 
   useEffect(() => {
     return () => {
@@ -52,7 +76,8 @@ export function useListQueryState({ debounceMs = 300 }: UseListQueryStateOptions
       ...nextQuery,
       pageSize: nextQuery.pageSize ?? DEFAULT_PAGE_SIZE,
     };
-    const nextSearchParams = createListQuerySearchParams(canonicalQuery);
+    const extraEntries = Array.from(extraFiltersRef.current.entries()) as Array<[string, string]>;
+    const nextSearchParams = createListQuerySearchParams(canonicalQuery, { extraEntries });
     const queryString = nextSearchParams.toString();
     router.replace(queryString ? `${pathname}?${queryString}` : pathname);
   };
@@ -93,7 +118,22 @@ export function useListQueryState({ debounceMs = 300 }: UseListQueryStateOptions
 
   const resetFilters = () => {
     cancelPendingSearch();
+    extraFiltersRef.current.clear();
     navigate({ page: 1, pageSize: queryRef.current.pageSize ?? DEFAULT_PAGE_SIZE });
+  };
+
+  /**
+   * Generic escape hatch for module-specific filter params not in ListQueryDto.
+   * Resets page on change. Pass undefined to clear the filter.
+   */
+  const setFilter = (key: string, value: string | undefined) => {
+    cancelPendingSearch();
+    if (value === undefined) {
+      extraFiltersRef.current.delete(key);
+    } else {
+      extraFiltersRef.current.set(key, value);
+    }
+    navigate(applyListQueryPatch(queryRef.current, { page: 1 }));
   };
 
   return {
@@ -104,6 +144,7 @@ export function useListQueryState({ debounceMs = 300 }: UseListQueryStateOptions
     setSearchValue,
     setSort,
     setStatus,
+    setFilter,
     resetFilters,
   };
 }

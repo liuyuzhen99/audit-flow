@@ -23,6 +23,7 @@ export type QueueItemDto = {
   status: QueueStatus;
   auditDecision: AuditDecisionDto;
   progress: QueueProgressDto;
+  reportId: string | null;
   submittedAt: string;
   updatedAt: string;
 };
@@ -51,5 +52,6 @@ export type QueueTableRowViewModel = {
   summaryLabel: string;
   progressLabel: string;
   progressPercent: number;
+  reportId: string | null;
   updatedLabel: string;
 };

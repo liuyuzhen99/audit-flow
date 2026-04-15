@@ -1,6 +1,6 @@
 import type { ListQueryDto } from "@/types/api";
 import type { LibraryAssetDto, LibraryDashboardResponseDto } from "@/types/library";
-import { libraryDashboardResponseDtoSchema } from "@/lib/schemas/library";
+import { libraryAssetDtoSchema, libraryDashboardResponseDtoSchema } from "@/lib/schemas/library";
 import { librarySeedRecords } from "@/lib/mocks/data/library";
 import { MOCK_GENERATED_AT } from "@/lib/mocks/data/common";
 
@@ -20,6 +20,15 @@ function filterLibraryAssets(items: LibraryAssetDto[], query?: Pick<ListQueryDto
 
 function countLibraryAssets(items: LibraryAssetDto[], predicate: (item: LibraryAssetDto) => boolean): string {
   return String(items.filter(predicate).length);
+}
+
+export function getLibraryAssetDetail(assetId: string): LibraryAssetDto | null {
+  const asset = librarySeedRecords.find((item) => item.id === assetId);
+  return asset ? libraryAssetDtoSchema.parse(asset) : null;
+}
+
+export function getOrderedLibraryAssetIds(query?: Partial<LibraryDashboardQuery>): string[] {
+  return filterLibraryAssets(librarySeedRecords, query).map((item) => item.id);
 }
 
 export function buildLibraryDashboardResponse(query?: Partial<LibraryDashboardQuery>): LibraryDashboardResponseDto {

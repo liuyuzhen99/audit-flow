@@ -62,6 +62,21 @@ describe("dashboard pages", () => {
     expect(screen.queryByText("The Weeknd")).not.toBeInTheDocument();
   });
 
+  it("applies artists dateRange params on the server render", async () => {
+    mockNavigation.pathname = "/artists";
+    mockNavigation.searchParams = new URLSearchParams("dateRange=2w");
+
+    render(
+      await ArtistsPage({
+        searchParams: Promise.resolve({ dateRange: "2w" }),
+      }),
+    );
+
+    // All seed artists are within the 2-week window — verify the page renders without error
+    expect(screen.getByRole("heading", { name: "Artists" })).toBeInTheDocument();
+    expect(screen.getByText("M83")).toBeInTheDocument();
+  });
+
   it("applies artists sorting params on the server render", async () => {
     mockNavigation.pathname = "/artists";
     mockNavigation.searchParams = new URLSearchParams("sortBy=name&sortDirection=desc");

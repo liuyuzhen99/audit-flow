@@ -6,6 +6,8 @@ export type PipelineSeedRecord = {
   startedAtStep: number;
   failAtStep: number | null;
   startedAt: string;
+  /** Library asset ID linked to this job's deliverables once completed */
+  assetId: string | null;
 };
 
 export const pipelineSeedRecords: PipelineSeedRecord[] = [
@@ -17,6 +19,7 @@ export const pipelineSeedRecords: PipelineSeedRecord[] = [
     startedAtStep: 0,
     failAtStep: null,
     startedAt: "2026-04-09T10:00:00.000Z",
+    assetId: "asset-1",
   },
   {
     id: "job-102",
@@ -26,6 +29,7 @@ export const pipelineSeedRecords: PipelineSeedRecord[] = [
     startedAtStep: 2,
     failAtStep: null,
     startedAt: "2026-04-09T09:54:00.000Z",
+    assetId: "asset-2",
   },
   {
     id: "job-103",
@@ -35,5 +39,6 @@ export const pipelineSeedRecords: PipelineSeedRecord[] = [
     startedAtStep: 1,
     failAtStep: 3,
     startedAt: "2026-04-09T09:57:00.000Z",
+    assetId: null,
   },
 ];

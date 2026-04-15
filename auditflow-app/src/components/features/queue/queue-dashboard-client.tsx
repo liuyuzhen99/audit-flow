@@ -1,5 +1,8 @@
 "use client";
 
+import type { ColumnDef } from "@tanstack/react-table";
+import Link from "next/link";
+import { ArrowRight, FileText } from "lucide-react";
 import { createColumnHelper } from "@tanstack/react-table";
 
 import { getQueueDashboard } from "@/lib/api/queue";
@@ -17,7 +20,8 @@ import type { QueueTableRowViewModel } from "@/types/queue";
 
 const columnHelper = createColumnHelper<QueueTableRowViewModel>();
 
-const columns = [
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const columns: ColumnDef<QueueTableRowViewModel, any>[] = [
   columnHelper.accessor("title", {
     header: "Track",
     meta: { sortKey: "title" },
@@ -61,6 +65,51 @@ const columns = [
         </div>
       </div>
     ),
+  }),
+  // Actions column — fixed width to prevent overflow on 1280px viewports
+  columnHelper.display({
+    id: "actions",
+    header: "Actions",
+    size: 140,
+    cell: (info) => {
+      const row = info.row.original;
+
+      return (
+        <div className="flex items-center gap-2">
+          {/* Route to Pipeline — always available */}
+          <Link
+            aria-label={`Route ${row.title} to Pipeline`}
+            className="flex h-8 w-8 items-center justify-center rounded-xl border border-[var(--color-border)] text-slate-500 hover:border-[var(--color-primary)] hover:text-[var(--color-primary)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-primary)]"
+            href="/pipeline"
+            title="Route to Pipeline"
+          >
+            <ArrowRight className="h-4 w-4" />
+          </Link>
+
+          {/* View Report — live when a report exists */}
+          {row.reportId ? (
+            <Link
+              aria-label={`View report for ${row.title}`}
+              className="flex h-8 w-8 items-center justify-center rounded-xl border border-[var(--color-border)] text-slate-500 hover:border-[var(--color-primary)] hover:text-[var(--color-primary)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-primary)]"
+              href={`/reports/${row.reportId}`}
+              title="View report"
+            >
+              <FileText className="h-4 w-4" />
+            </Link>
+          ) : (
+            <button
+              aria-label={`No report available for ${row.title}`}
+              className="flex h-8 w-8 cursor-not-allowed items-center justify-center rounded-xl border border-[var(--color-border)] text-slate-200"
+              disabled
+              title="No report available"
+              type="button"
+            >
+              <FileText className="h-4 w-4" />
+            </button>
+          )}
+        </div>
+      );
+    },
   }),
 ];
 

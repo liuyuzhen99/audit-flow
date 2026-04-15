@@ -104,6 +104,8 @@ function buildLogs(seed: PipelineSeedRecord, tick: number, runStatus: PipelineRu
     return {
       id: `${seed.id}-log-${index + 1}`,
       timestamp: timestamp.toISOString(),
+      // tick matches the global poll tick so "Clear Console" can filter by cutoff
+      tick,
       level:
         runStatus === "failed" && index === maxLogCount - 1
           ? "error"
@@ -128,18 +130,21 @@ function buildDeliverables(seed: PipelineSeedRecord, runStatus: PipelineRunStatu
       label: "Master Audio",
       status: blocked ? "blocked" : ready ? "ready" : "processing",
       description: blocked ? "Awaiting rerun after failure" : "Ready for downstream access",
+      assetId: ready ? seed.assetId : null,
     },
     {
       id: `${seed.id}-deliverable-video`,
       label: "Video Render (V1)",
       status: blocked ? "blocked" : ready ? "ready" : "processing",
       description: blocked ? "Render output unavailable" : "Ready for downstream access",
+      assetId: ready ? seed.assetId : null,
     },
     {
       id: `${seed.id}-deliverable-metadata`,
       label: "Metadata JSON",
       status: blocked ? "blocked" : ready ? "ready" : "processing",
       description: blocked ? "Metadata blocked by failed run" : "Ready for downstream access",
+      assetId: ready ? seed.assetId : null,
     },
   ];
 }

@@ -1,5 +1,7 @@
 "use client";
 
+import Link from "next/link";
+
 import { PageToolbar } from "@/components/shared/page-toolbar";
 import { SearchInput } from "@/components/shared/search-input";
 import { StatCard } from "@/components/shared/stat-card";
@@ -71,9 +73,10 @@ export function LibraryDashboardClient({ summary, cards }: LibraryDashboardClien
 
       <section className="grid gap-5 md:grid-cols-2 xl:grid-cols-4">
         {cards.map((asset) => (
-          <article
+          <Link
             key={asset.id}
-            className="overflow-hidden rounded-[24px] border border-[var(--color-border)] bg-white shadow-[0_10px_24px_rgba(15,23,42,0.05)]"
+            href={`/library/${asset.id}`}
+            className="group overflow-hidden rounded-[24px] border border-[var(--color-border)] bg-white shadow-[0_10px_24px_rgba(15,23,42,0.05)] transition-shadow hover:shadow-[0_16px_32px_rgba(15,23,42,0.10)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-primary)]"
           >
             <div className={`flex aspect-video items-end bg-gradient-to-br ${asset.gradientClassName} p-4 text-right text-white`}>
               <div className="ml-auto rounded-lg bg-black/55 px-3 py-1 text-xs font-semibold">
@@ -82,7 +85,7 @@ export function LibraryDashboardClient({ summary, cards }: LibraryDashboardClien
             </div>
             <div className="space-y-3 p-5">
               <div>
-                <h2 className="text-xl font-semibold text-slate-900">{asset.title}</h2>
+                <h2 className="text-xl font-semibold text-slate-900 group-hover:text-[var(--color-primary)] transition-colors">{asset.title}</h2>
                 <p className="mt-2 text-sm text-slate-500">{asset.artistName}</p>
               </div>
               <div className="flex items-center justify-between gap-3">
@@ -90,7 +93,7 @@ export function LibraryDashboardClient({ summary, cards }: LibraryDashboardClien
                 <span className="text-sm text-slate-500">{asset.dateLabel}</span>
               </div>
             </div>
-          </article>
+          </Link>
         ))}
       </section>
     </section>

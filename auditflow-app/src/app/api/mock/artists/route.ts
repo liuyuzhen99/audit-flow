@@ -15,8 +15,11 @@ function createErrorResponse(status: number, code: string, message: string) {
 export async function GET(request: NextRequest) {
   try {
     const query = parseListQueryParams(request.nextUrl.searchParams);
+    // dateRange is Artists-scoped — read separately, not via shared parseListQueryParams
+    const rawDateRange = request.nextUrl.searchParams.get("dateRange");
+    const dateRange = rawDateRange === "2w" ? "2w" : undefined;
 
-    return NextResponse.json(buildArtistsDashboardResponse(query));
+    return NextResponse.json(buildArtistsDashboardResponse({ ...query, dateRange }));
   } catch (error) {
     return createErrorResponse(
       500,

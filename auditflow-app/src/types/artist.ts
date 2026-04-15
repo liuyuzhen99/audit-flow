@@ -1,4 +1,4 @@
-import type { PaginationMetaDto, ResponseMetaDto, SummaryMetricDto } from "@/types/api";
+import type { ListQueryDto, PaginationMetaDto, ResponseMetaDto, SummaryMetricDto } from "@/types/api";
 import type { StatusTone } from "@/types/common";
 
 export type ArtistAuditStatus = "autoApproved" | "manualReview" | "autoRejected" | "monitoring";
@@ -47,4 +47,9 @@ export type ArtistTableRowViewModel = {
   statusLabel: string;
   statusTone: StatusTone;
   freshnessLabel: string;
+};
+
+/** Module-scoped query extension — not part of shared ListQueryDto */
+export type ArtistsListQueryDto = ListQueryDto & {
+  dateRange?: "2w";
 };

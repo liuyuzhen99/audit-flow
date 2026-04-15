@@ -22,6 +22,10 @@ export async function GET(request: NextRequest) {
   try {
     return NextResponse.json(getReportDetailResponse(reportId));
   } catch (error) {
+    if (error instanceof Error && error.message === "Report not found") {
+      return createErrorResponse(404, "report_not_found", error.message);
+    }
+
     return createErrorResponse(
       500,
       "report_fetch_failed",

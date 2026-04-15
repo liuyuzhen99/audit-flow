@@ -58,6 +58,7 @@ function adaptLog(item: NonNullable<PipelineDashboardResponseDto["activeJob"]>["
 
   return {
     id: item.id,
+    tick: item.tick,
     displayLine: `[${timeLabel}] ${item.message}`,
     toneClassName:
       item.level === "success"
@@ -77,6 +78,7 @@ function adaptDeliverable(item: NonNullable<PipelineDashboardResponseDto["active
     id: item.id,
     label: item.label,
     description: item.description,
+    assetId: item.assetId,
     statusLabel: statusPresentation.label,
     statusTone: statusPresentation.tone,
   };

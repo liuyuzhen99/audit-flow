@@ -29,6 +29,7 @@ function adaptQueueRow(item: QueueDashboardResponseDto["items"][number]): QueueT
     summaryLabel: item.auditDecision.ruleSummary,
     progressLabel: item.progress.label,
     progressPercent: item.progress.percent,
+    reportId: item.reportId,
     updatedLabel: formatUpdatedLabel(item.updatedAt),
   };
 }

@@ -57,6 +57,7 @@ describe("queue schema", () => {
       artistName: "M83",
       coverArtUrl: null,
       status: "auditing",
+      reportId: null,
       auditDecision: {
         status: "pending",
         confidenceScore: null,
@@ -120,6 +121,7 @@ describe("pipeline schema", () => {
         {
           id: "log-1",
           timestamp: "2026-04-09T10:00:00.000Z",
+          tick: 1,
           level: "info",
           message: "Task initialized",
         },
@@ -130,6 +132,7 @@ describe("pipeline schema", () => {
           label: "Master Audio",
           status: "ready",
           description: "Ready for downstream access",
+          assetId: null,
         },
       ],
     });
@@ -170,6 +173,16 @@ describe("library schema", () => {
       metadata: {
         sourceStatus: "completed",
       },
+      media: {
+        playbackUrl: null,
+        posterUrl: null,
+        mimeType: null,
+      },
+      linkedReport: null,
+      linkedReportAsset: null,
+      reportRuleHits: [],
+      reportTimeline: [],
+      reportComments: [],
       versions: [],
     });
 
@@ -197,8 +210,23 @@ describe("report schema", () => {
       title: "Midnight City Audit Report",
       status: "completed",
       createdAt: "2026-04-09T10:00:00.000Z",
+      summary: {
+        decisionStatus: "approved",
+        confidenceScore: 98,
+        ruleSummary: "No rights conflicts, audio quality verified.",
+        durationSeconds: 243,
+        transcriptLanguage: "English",
+        completedAt: null,
+      },
+      linkedAsset: null,
+      media: {
+        playbackUrl: null,
+        posterUrl: null,
+        mimeType: null,
+      },
       ruleHits: [],
       timeline: [],
+      comments: [],
     });
 
     expect(parsed.id).toBe("report-1");
@@ -212,8 +240,28 @@ describe("report schema", () => {
         title: "Midnight City Audit Report",
         status: "completed",
         createdAt: "2026-04-09T10:00:00.000Z",
+        summary: {
+          decisionStatus: "approved",
+          confidenceScore: 98,
+          ruleSummary: "No rights conflicts, audio quality verified.",
+          durationSeconds: 243,
+          transcriptLanguage: "English",
+          completedAt: "2026-04-09T10:06:00.000Z",
+        },
+        linkedAsset: {
+          assetId: "asset-1",
+          title: "Midnight City (Audited Mix)",
+          artistName: "M83",
+          status: "published",
+        },
+        media: {
+          playbackUrl: "https://example.com/media/midnight-city.mp4",
+          posterUrl: "https://example.com/posters/midnight-city.jpg",
+          mimeType: "video/mp4",
+        },
         ruleHits: [],
         timeline: [],
+        comments: [],
       },
       meta: {
         generatedAt: "2026-04-09T10:00:00.000Z",

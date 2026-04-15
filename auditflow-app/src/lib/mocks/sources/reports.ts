@@ -4,7 +4,7 @@ import { reportSeedRecords } from "@/lib/mocks/data/reports";
 import type { ReportDetailResponseDto } from "@/types/audit-report";
 
 export function getReportDetailResponse(reportId: string): ReportDetailResponseDto {
-  const report = reportSeedRecords.find((item) => item.id === reportId) ?? reportSeedRecords[0];
+  const report = reportSeedRecords.find((item) => item.id === reportId);
 
   if (!report) {
     throw new Error("Report not found");

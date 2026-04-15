@@ -2,19 +2,25 @@ import { artistsDashboardResponseDtoSchema, artistListResponseDtoSchema } from "
 import { MOCK_GENERATED_AT } from "@/lib/mocks/data/common";
 import { artistSeedRecords } from "@/lib/mocks/data/artists";
 import { DEFAULT_PAGE, type ListQueryDto, SortDirection } from "@/types/api";
-import type { ArtistDto, ArtistsDashboardResponseDto, ArtistListResponseDto } from "@/types/artist";
+import type { ArtistDto, ArtistsDashboardResponseDto, ArtistListResponseDto, ArtistsListQueryDto } from "@/types/artist";
 
-type ArtistsDashboardQuery = Pick<ListQueryDto, "page" | "pageSize" | "q" | "status" | "sortBy" | "sortDirection">;
+// Cutoff date for "Recent 2 Weeks" filter — deterministic, not Date.now()
+const TWO_WEEKS_CUTOFF = new Date("2026-03-31T00:00:00.000Z");
 
-function filterArtists(items: ArtistDto[], query?: Pick<ListQueryDto, "q" | "status">): ArtistDto[] {
+type ArtistsDashboardQuery = Pick<ArtistsListQueryDto, "page" | "pageSize" | "q" | "status" | "sortBy" | "sortDirection" | "dateRange">;
+
+function filterArtists(items: ArtistDto[], query?: Pick<ArtistsListQueryDto, "q" | "status" | "dateRange">): ArtistDto[] {
   return items.filter((item) => {
     const matchesQuery =
       !query?.q ||
       item.name.toLowerCase().includes(query.q.toLowerCase()) ||
       item.channel.name.toLowerCase().includes(query.q.toLowerCase());
     const matchesStatus = !query?.status || item.auditSnapshot.status === query.status;
+    // dateRange=2w: only include artists synced within the last two weeks
+    const matchesDateRange =
+      !query?.dateRange || new Date(item.lastSyncedAt) >= TWO_WEEKS_CUTOFF;
 
-    return matchesQuery && matchesStatus;
+    return matchesQuery && matchesStatus && matchesDateRange;
   });
 }
 

@@ -39,10 +39,24 @@ describe("QueueDashboardClient", () => {
             summaryLabel: "Potential crowd noise detected",
             progressLabel: "Auditing",
             progressPercent: 64,
+            reportId: "report-101",
             updatedLabel: "10:24",
           },
+          {
+            id: "queue-2",
+            title: "Starboy",
+            artistName: "The Weeknd",
+            statusLabel: "Manual review",
+            statusTone: "warning",
+            confidenceLabel: "72%",
+            summaryLabel: "No report available yet",
+            progressLabel: "Manual review",
+            progressPercent: 100,
+            reportId: null,
+            updatedLabel: "10:28",
+          },
         ],
-        pagination: { page: 1, pageSize: 10, total: 1, totalPages: 1 },
+        pagination: { page: 1, pageSize: 10, total: 2, totalPages: 1 },
         polling: { intervalMs: 4000, tick: 2, terminal: false },
       },
       error: null,
@@ -118,6 +132,57 @@ describe("QueueDashboardClient", () => {
     screen.getByRole("button", { name: "Next Page" }).click();
 
     expect(mockReplace).toHaveBeenCalledWith("/queue?page=3");
+  });
+
+  it("renders route-to-pipeline action as a link", async () => {
+    const { QueueDashboardClient } = await import("@/components/features/queue/queue-dashboard-client");
+
+    render(
+      <QueueDashboardClient
+        initialDashboard={{
+          summary: [],
+          rows: [],
+          pagination: { page: 1, pageSize: 10, total: 1, totalPages: 1 },
+          polling: { intervalMs: 4000, tick: 2, terminal: false },
+        }}
+      />,
+    );
+
+    expect(screen.getByRole("link", { name: /route midnight city to pipeline/i })).toHaveAttribute("href", "/pipeline");
+  });
+
+  it("renders report action as a live link when a report exists", async () => {
+    const { QueueDashboardClient } = await import("@/components/features/queue/queue-dashboard-client");
+
+    render(
+      <QueueDashboardClient
+        initialDashboard={{
+          summary: [],
+          rows: [],
+          pagination: { page: 1, pageSize: 10, total: 1, totalPages: 1 },
+          polling: { intervalMs: 4000, tick: 2, terminal: false },
+        }}
+      />,
+    );
+
+    expect(screen.getByRole("link", { name: /view report for midnight city/i })).toHaveAttribute("href", "/reports/report-101");
+  });
+
+  it("renders report action as disabled when no report exists", async () => {
+    const { QueueDashboardClient } = await import("@/components/features/queue/queue-dashboard-client");
+
+    render(
+      <QueueDashboardClient
+        initialDashboard={{
+          summary: [],
+          rows: [],
+          pagination: { page: 1, pageSize: 10, total: 1, totalPages: 1 },
+          polling: { intervalMs: 4000, tick: 2, terminal: false },
+        }}
+      />,
+    );
+
+    expect(screen.getByRole("button", { name: /no report available for starboy/i })).toBeDisabled();
   });
 
   it("shows an error banner while preserving the last successful queue snapshot", async () => {

@@ -5,6 +5,8 @@ export type QueueSeedRecord = {
   coverArtUrl: string | null;
   startedAtStep: number;
   transitionPath: "approved" | "manualReview" | "rejected";
+  /** Report becomes available once approved/manual-review processing reaches a terminal state */
+  reportId: string | null;
   submittedAt: string;
 };
 
@@ -16,6 +18,7 @@ export const queueSeedRecords: QueueSeedRecord[] = [
     coverArtUrl: null,
     startedAtStep: 0,
     transitionPath: "approved",
+    reportId: "report-101",
     submittedAt: "2026-04-09T10:00:00.000Z",
   },
   {
@@ -25,6 +28,7 @@ export const queueSeedRecords: QueueSeedRecord[] = [
     coverArtUrl: null,
     startedAtStep: 1,
     transitionPath: "manualReview",
+    reportId: "report-102",
     submittedAt: "2026-04-09T09:58:00.000Z",
   },
   {
@@ -34,6 +38,7 @@ export const queueSeedRecords: QueueSeedRecord[] = [
     coverArtUrl: null,
     startedAtStep: 2,
     transitionPath: "rejected",
+    reportId: null,
     submittedAt: "2026-04-09T09:55:00.000Z",
   },
 ];

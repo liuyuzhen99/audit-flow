@@ -17,6 +17,8 @@ export const pipelineStageDtoSchema = z.object({
 export const pipelineLogEntryDtoSchema = z.object({
   id: dtoIdSchema,
   timestamp: isoTimestampSchema,
+  /** Monotonic tick counter used for "Clear Console" filtering */
+  tick: z.number().int().nonnegative(),
   level: pipelineLogLevelSchema,
   message: z.string().trim().min(1),
 });
@@ -26,6 +28,8 @@ export const pipelineDeliverableDtoSchema = z.object({
   label: z.string().trim().min(1),
   status: deliverableStatusSchema,
   description: z.string().trim().min(1),
+  /** Library asset ID for "Open in Library" navigation; null when not yet available */
+  assetId: dtoIdSchema.nullable(),
 });
 
 export const pipelineJobDtoSchema = z.object({

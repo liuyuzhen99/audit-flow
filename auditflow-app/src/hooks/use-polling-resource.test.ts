@@ -131,4 +131,37 @@ describe("usePollingResource", () => {
     expect(result.current.error?.message).toBe("Refresh failed");
     expect(result.current.isRefreshing).toBe(false);
   });
+
+  it("does not restart the interval when intervalMs changes in a polled response", async () => {
+    vi.useFakeTimers();
+
+    const load = vi
+      .fn()
+      .mockResolvedValueOnce({ value: "tick-1", polling: { intervalMs: 2000, tick: 1, terminal: false } })
+      .mockResolvedValueOnce({ value: "tick-2", polling: { intervalMs: 2000, tick: 2, terminal: false } });
+
+    const { result } = renderHook(() =>
+      usePollingResource({
+        initialData: { value: "initial", polling: { intervalMs: 1000, tick: 0, terminal: false } },
+        load,
+      }),
+    );
+
+    await act(async () => {
+      vi.advanceTimersByTime(1000);
+      await Promise.resolve();
+    });
+
+    expect(result.current.data.value).toBe("tick-1");
+
+    // The interval was created at 1000ms and is not restarted when intervalMs changes.
+    // The existing interval still fires at 1000ms — the ref update only affects the NEXT
+    // interval that would be created on a re-render (e.g. after terminal → non-terminal).
+    await act(async () => {
+      vi.advanceTimersByTime(1000);
+      await Promise.resolve();
+    });
+
+    expect(load).toHaveBeenCalledTimes(2);
+  });
 });
