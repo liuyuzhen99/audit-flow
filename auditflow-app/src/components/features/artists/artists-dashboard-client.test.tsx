@@ -1,7 +1,8 @@
-import { fireEvent, render, screen } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const mockReplace = vi.fn();
+const mockRefresh = vi.fn();
 const mockNavigation = {
   pathname: "/artists",
   searchParams: new URLSearchParams(),
@@ -9,13 +10,27 @@ const mockNavigation = {
 
 vi.mock("next/navigation", () => ({
   usePathname: () => mockNavigation.pathname,
-  useRouter: () => ({ replace: mockReplace }),
+  useRouter: () => ({ replace: mockReplace, refresh: mockRefresh }),
   useSearchParams: () => mockNavigation.searchParams,
+}));
+
+vi.mock("@/lib/api/artists", () => ({
+  resyncArtist: vi.fn().mockResolvedValue({
+    runId: "run-1",
+    artistId: "artist-1",
+    status: "completed",
+    discoveredCount: 2,
+    startedAt: "2026-04-09T10:00:00.000Z",
+    completedAt: "2026-04-09T10:02:00.000Z",
+    channelRunId: "channel-1",
+    discoveryRunId: "discovery-1",
+  }),
 }));
 
 describe("ArtistsDashboardClient", () => {
   beforeEach(() => {
     mockReplace.mockReset();
+    mockRefresh.mockReset();
     mockNavigation.pathname = "/artists";
     mockNavigation.searchParams = new URLSearchParams();
   });
@@ -29,12 +44,13 @@ describe("ArtistsDashboardClient", () => {
           {
             id: "artist-1",
             name: "M83",
-            followerLabel: "4.9M",
-            channelLabel: "M83 Official",
-            releasesLabel: "2 new tracks",
-            statusLabel: "Monitoring",
-            statusTone: "info",
-            freshnessLabel: "Updated 1h ago",
+            channelLabel: "UC_M83",
+            candidateLabel: "2 candidates",
+            syncStatusLabel: "Completed",
+            syncStatusTone: "success",
+            freshnessLabel: "Synced 1h ago",
+            errorLabel: null,
+            canResync: true,
           },
         ]}
         pagination={{ page: 1, pageSize: 10, total: 4, totalPages: 1 }}
@@ -64,21 +80,6 @@ describe("ArtistsDashboardClient", () => {
     expect(mockReplace).toHaveBeenLastCalledWith("/artists?pageSize=20");
   });
 
-  it("toggles Recent 2 Weeks in the URL", async () => {
-    const { ArtistsDashboardClient } = await import("@/components/features/artists/artists-dashboard-client");
-
-    render(
-      <ArtistsDashboardClient
-        rows={[]}
-        pagination={{ page: 1, pageSize: 10, total: 0, totalPages: 1 }}
-      />,
-    );
-
-    fireEvent.click(screen.getByRole("button", { name: "Recent 2 Weeks" }));
-
-    expect(mockReplace).toHaveBeenCalledWith("/artists?dateRange=2w");
-  });
-
   it("updates status filter in the URL", async () => {
     const { ArtistsDashboardClient } = await import("@/components/features/artists/artists-dashboard-client");
 
@@ -89,21 +90,62 @@ describe("ArtistsDashboardClient", () => {
       />,
     );
 
-    fireEvent.click(screen.getByRole("button", { name: "Review" }));
+    fireEvent.click(screen.getByRole("button", { name: "Completed" }));
 
-    expect(mockReplace).toHaveBeenCalledWith("/artists?status=manualReview");
+    expect(mockReplace).toHaveBeenCalledWith("/artists?status=completed");
   });
 
-  it("renders Bulk Download as a disabled Phase 5 action", async () => {
+  it("triggers artist resync", async () => {
     const { ArtistsDashboardClient } = await import("@/components/features/artists/artists-dashboard-client");
 
     render(
       <ArtistsDashboardClient
-        rows={[]}
-        pagination={{ page: 1, pageSize: 10, total: 0, totalPages: 1 }}
+        rows={[
+          {
+            id: "artist-1",
+            name: "M83",
+            channelLabel: "UC_M83",
+            candidateLabel: "2 candidates",
+            syncStatusLabel: "Completed",
+            syncStatusTone: "success",
+            freshnessLabel: "Synced 1h ago",
+            errorLabel: null,
+            canResync: true,
+          },
+        ]}
+        pagination={{ page: 1, pageSize: 10, total: 1, totalPages: 1 }}
       />,
     );
 
-    expect(screen.getByRole("button", { name: "Bulk Download (Phase 5)" })).toBeDisabled();
+    fireEvent.click(screen.getByRole("button", { name: "Resync" }));
+
+    await waitFor(() => {
+      expect(mockRefresh).toHaveBeenCalled();
+    });
+  });
+
+  it("renders a view link for candidate details", async () => {
+    const { ArtistsDashboardClient } = await import("@/components/features/artists/artists-dashboard-client");
+
+    render(
+      <ArtistsDashboardClient
+        rows={[
+          {
+            id: "artist-1",
+            name: "M83",
+            channelLabel: "UC_M83",
+            candidateLabel: "2 candidates",
+            syncStatusLabel: "Completed",
+            syncStatusTone: "success",
+            freshnessLabel: "Synced 1h ago",
+            errorLabel: null,
+            canResync: true,
+          },
+        ]}
+        pagination={{ page: 1, pageSize: 10, total: 1, totalPages: 1 }}
+      />,
+    );
+
+    expect(screen.getByRole("link", { name: "View" })).toHaveAttribute("href", "/artists/artist-1?artistName=M83");
   });
 });

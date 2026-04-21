@@ -9,8 +9,8 @@ import {
 
 describe("audit status presentation", () => {
   it("maps artist audit statuses", () => {
-    expect(getArtistAuditPresentation("autoApproved")).toEqual({
-      label: "Auto-approved",
+    expect(getArtistAuditPresentation("completed")).toEqual({
+      label: "Completed",
       tone: "success",
     });
   });

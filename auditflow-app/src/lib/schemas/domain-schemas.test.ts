@@ -11,28 +11,40 @@ describe("artist schema", () => {
     const parsed = artistDtoSchema.parse({
       id: "artist-1",
       name: "M83",
-      avatarUrl: null,
-      spotifyFollowers: 42100000,
-      recentReleaseCount: 3,
-      lastSyncedAt: "2026-04-09T10:00:00.000Z",
-      channel: {
-        id: "channel-1",
-        name: "M83 Official",
-        platform: "youtube",
+      status: "active",
+      youtubeChannelId: "UC_M83",
+      youtubeChannelLabel: "UC_M83",
+      syncStatus: "completed",
+      lastSyncStartedAt: "2026-04-09T09:55:00.000Z",
+      lastSyncCompletedAt: "2026-04-09T10:00:00.000Z",
+      lastSyncError: null,
+      candidateCount: 3,
+      partialFailure: false,
+      emptyState: false,
+      retryMetadata: {
+        canResync: true,
+        latestRetryCount: 0,
+        latestFailureReason: null,
       },
-      auditSnapshot: {
-        status: "autoApproved",
-        lastDecisionAt: "2026-04-09T09:55:00.000Z",
-        flaggedReleaseCount: 0,
+      sourceHealth: {
+        youtube_rss: {
+          status: "completed",
+          retryCount: 0,
+          failureReason: null,
+          startedAt: "2026-04-09T09:55:00.000Z",
+          completedAt: "2026-04-09T10:00:00.000Z",
+          discoveredCount: 3,
+        },
       },
+      latestCandidate: null,
+      latestRun: null,
     });
 
-    expect(parsed.auditSnapshot.status).toBe("autoApproved");
+    expect(parsed.syncStatus).toBe("completed");
   });
 
   it("parses an artist dashboard response", () => {
     const parsed = artistsDashboardResponseDtoSchema.parse({
-      summary: [],
       items: [],
       pagination: {
         page: 1,

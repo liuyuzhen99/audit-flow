@@ -1,13 +1,14 @@
 import type { StatusConfig } from "@/lib/status";
-import type { ArtistAuditStatus } from "@/types/artist";
+import type { ArtistSyncStatus } from "@/types/artist";
 import type { LibraryStatus } from "@/types/library";
 import type { AuditDecisionStatus, QueueStatus } from "@/types/queue";
 
-const artistAuditPresentationMap: Record<ArtistAuditStatus, StatusConfig> = {
-  autoApproved: { label: "Auto-approved", tone: "success" },
-  manualReview: { label: "Manual review", tone: "warning" },
-  autoRejected: { label: "Auto-rejected", tone: "danger" },
-  monitoring: { label: "Monitoring", tone: "info" },
+const artistSyncPresentationMap: Record<ArtistSyncStatus, StatusConfig> = {
+  pending: { label: "Pending", tone: "neutral" },
+  processing: { label: "Processing", tone: "info" },
+  completed: { label: "Completed", tone: "success" },
+  failed: { label: "Failed", tone: "danger" },
+  partial: { label: "Partial", tone: "warning" },
 };
 
 const queueStatusPresentationMap: Record<QueueStatus, StatusConfig> = {
@@ -33,8 +34,8 @@ const libraryStatusPresentationMap: Record<LibraryStatus, StatusConfig> = {
   failed: { label: "Failed", tone: "danger" },
 };
 
-export function getArtistAuditPresentation(status: ArtistAuditStatus): StatusConfig {
-  return artistAuditPresentationMap[status];
+export function getArtistAuditPresentation(status: ArtistSyncStatus): StatusConfig {
+  return artistSyncPresentationMap[status];
 }
 
 export function getQueueStatusPresentation(status: QueueStatus): StatusConfig {

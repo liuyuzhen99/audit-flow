@@ -5,7 +5,6 @@ import { adaptLibraryDashboard, adaptLibraryAssetDetail } from "@/lib/adapters/l
 import { adaptPipelineDashboard } from "@/lib/adapters/pipeline";
 import { adaptQueueDashboard } from "@/lib/adapters/queue";
 import { adaptReportDetail } from "@/lib/adapters/reports";
-import { buildArtistsDashboardResponse } from "@/lib/mocks/sources/artists";
 import { buildLibraryDashboardResponse, getLibraryAssetDetail } from "@/lib/mocks/sources/library";
 import { buildPipelineDashboardResponse } from "@/lib/mocks/sources/pipeline";
 import { buildQueueDashboardResponse } from "@/lib/mocks/sources/queue";
@@ -13,9 +12,37 @@ import { getReportDetailResponse } from "@/lib/mocks/sources/reports";
 
 describe("dashboard adapters", () => {
   it("adapts artists dashboard data", () => {
-    const viewModel = adaptArtistsDashboard(buildArtistsDashboardResponse());
+    const viewModel = adaptArtistsDashboard({
+      items: [
+        {
+          id: "artist-1",
+          name: "M83",
+          status: "active",
+          youtubeChannelId: "UC_M83",
+          youtubeChannelLabel: "UC_M83",
+          syncStatus: "completed",
+          lastSyncStartedAt: "2026-04-09T09:55:00.000Z",
+          lastSyncCompletedAt: "2026-04-09T10:00:00.000Z",
+          lastSyncError: null,
+          candidateCount: 2,
+          partialFailure: false,
+          emptyState: false,
+          retryMetadata: {
+            canResync: true,
+            latestRetryCount: 0,
+            latestFailureReason: null,
+          },
+          sourceHealth: {},
+          latestCandidate: null,
+          latestRun: null,
+        },
+      ],
+      pagination: { page: 1, pageSize: 10, total: 1, totalPages: 1 },
+      meta: { generatedAt: "2026-04-09T10:00:00.000Z" },
+    });
 
-    expect(viewModel.rows[0]?.statusLabel).toBeTruthy();
+    expect(viewModel.rows[0]?.syncStatusLabel).toBeTruthy();
+    expect(viewModel.rows[0]?.candidateLabel).toBe("2 candidates");
     expect(viewModel.summary[0]?.label).toBeTruthy();
   });
 
