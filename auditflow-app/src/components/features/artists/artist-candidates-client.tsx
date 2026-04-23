@@ -61,7 +61,7 @@ const columns = [
       </Link>
     ),
   }),
-] as ColumnDef<ArtistLatestCandidateDto, any>[];
+] as ColumnDef<ArtistLatestCandidateDto, unknown>[];
 
 type ArtistCandidatesClientProps = {
   artistId: string;

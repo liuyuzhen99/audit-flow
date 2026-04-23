@@ -68,6 +68,18 @@ export const artistDtoSchema = z.object({
 
 export const artistsDashboardResponseDtoSchema = z.object({
   summary: z.array(summaryMetricDtoSchema).optional(),
+  stats: z
+    .object({
+      totalArtists: z.number().int().nonnegative(),
+      visibleArtists: z.number().int().nonnegative(),
+      totalCompletedArtists: z.number().int().nonnegative(),
+      visibleCompletedArtists: z.number().int().nonnegative(),
+      totalFailedArtists: z.number().int().nonnegative(),
+      visibleFailedArtists: z.number().int().nonnegative(),
+      totalCandidates: z.number().int().nonnegative(),
+      visibleCandidates: z.number().int().nonnegative(),
+    })
+    .optional(),
   items: z.array(artistDtoSchema),
   pagination: paginationMetaDtoSchema,
   meta: responseMetaDtoSchema,
@@ -93,4 +105,5 @@ export const artistResyncResponseDtoSchema = z.object({
   completedAt: isoTimestampSchema,
   channelRunId: dtoIdSchema,
   discoveryRunId: dtoIdSchema,
+  artistRemoved: z.boolean().optional(),
 });

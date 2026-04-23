@@ -13,6 +13,7 @@ type PollingData = {
 type UsePollingResourceOptions<T extends PollingData> = {
   initialData: T;
   load: (nextTick: number) => Promise<T>;
+  paused?: boolean;
   resetKey?: string | number;
 };
 
@@ -46,6 +47,7 @@ function pollingReducer<T extends PollingData>(state: PollingState<T>, action: P
 export function usePollingResource<T extends PollingData>({
   initialData,
   load,
+  paused = false,
   resetKey,
 }: UsePollingResourceOptions<T>) {
   const [state, dispatch] = useReducer(pollingReducer<T>, {
@@ -80,6 +82,10 @@ export function usePollingResource<T extends PollingData>({
   }, [resetKey]);
 
   useEffect(() => {
+    if (paused) {
+      return;
+    }
+
     if (dataRef.current.polling.terminal) {
       return;
     }
@@ -130,7 +136,7 @@ export function usePollingResource<T extends PollingData>({
     return () => {
       window.clearInterval(intervalId);
     };
-  }, [state.data.polling.terminal]);
+  }, [paused, state.data.polling.terminal]);
 
   return state;
 }

@@ -1,5 +1,5 @@
 import { act, renderHook } from "@testing-library/react";
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { useListQueryState } from "@/hooks/use-list-query-state";
 
@@ -16,20 +16,14 @@ vi.mock("next/navigation", () => ({
 
 describe("useListQueryState", () => {
   beforeEach(() => {
-    vi.useFakeTimers();
     mockReplace.mockReset();
     mockSearchParams.current = new URLSearchParams(
       "page=3&pageSize=20&q=midnight&status=queued&sortBy=updatedAt&sortDirection=desc",
     );
   });
 
-  afterEach(() => {
-    vi.runOnlyPendingTimers();
-    vi.useRealTimers();
-  });
-
   it("reads query state from the current URL", () => {
-    const { result } = renderHook(() => useListQueryState({ debounceMs: 300 }));
+    const { result } = renderHook(() => useListQueryState());
 
     expect(result.current.query.page).toBe(3);
     expect(result.current.query.pageSize).toBe(20);
@@ -38,18 +32,11 @@ describe("useListQueryState", () => {
     expect(result.current.searchValue).toBe("midnight");
   });
 
-  it("debounces search updates and resets page", () => {
-    const { result } = renderHook(() => useListQueryState({ debounceMs: 300 }));
+  it("updates search immediately when the debounced input commits a value", () => {
+    const { result } = renderHook(() => useListQueryState());
 
     act(() => {
       result.current.setSearchValue("aurora");
-      vi.advanceTimersByTime(299);
-    });
-
-    expect(mockReplace).not.toHaveBeenCalled();
-
-    act(() => {
-      vi.advanceTimersByTime(1);
     });
 
     expect(mockReplace).toHaveBeenCalledWith(
@@ -58,34 +45,19 @@ describe("useListQueryState", () => {
   });
 
   it("updates status and resets page immediately", () => {
-    const { result } = renderHook(() => useListQueryState({ debounceMs: 300 }));
+    const { result } = renderHook(() => useListQueryState());
 
     act(() => {
       result.current.setStatus("completed");
     });
 
-    expect(mockReplace).toHaveBeenCalledWith(
-      "/artists?pageSize=20&q=midnight&status=completed&sortBy=updatedAt&sortDirection=desc",
-    );
-  });
-
-  it("cancels pending search writes when an immediate filter update happens", () => {
-    const { result } = renderHook(() => useListQueryState({ debounceMs: 300 }));
-
-    act(() => {
-      result.current.setSearchValue("aurora");
-      result.current.setStatus("completed");
-      vi.advanceTimersByTime(300);
-    });
-
-    expect(mockReplace).toHaveBeenCalledTimes(1);
     expect(mockReplace).toHaveBeenCalledWith(
       "/artists?pageSize=20&q=midnight&status=completed&sortBy=updatedAt&sortDirection=desc",
     );
   });
 
   it("clears optional filters back to the canonical URL", () => {
-    const { result } = renderHook(() => useListQueryState({ debounceMs: 300 }));
+    const { result } = renderHook(() => useListQueryState());
 
     act(() => {
       result.current.resetFilters();
@@ -99,7 +71,7 @@ describe("useListQueryState", () => {
       "page=3&pageSize=20&q=midnight&status=queued&sortBy=updatedAt&sortDirection=desc",
     );
 
-    const { result } = renderHook(() => useListQueryState({ debounceMs: 300 }));
+    const { result } = renderHook(() => useListQueryState());
 
     act(() => {
       result.current.setFilter("dateRange", "2w");

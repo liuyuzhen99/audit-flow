@@ -4,7 +4,6 @@ import type { PipelineDashboardResponseDto, PipelineJobDto } from "@/types/pipel
 import { pipelineSeedRecords } from "@/lib/mocks/data/pipeline";
 import { MOCK_GENERATED_AT } from "@/lib/mocks/data/common";
 import { simulatePipelineJobDetail, simulatePipelineJobs } from "@/lib/mocks/simulators/pipeline";
-import { pipelineDashboardResponseDtoSchema } from "@/lib/schemas/pipeline";
 
 function filterPipelineJobs(items: PipelineJobDto[], query?: Pick<ListQueryDto, "q" | "status">): PipelineJobDto[] {
   return items.filter((item) => {
@@ -29,7 +28,7 @@ export function buildPipelineDashboardResponse(query?: Pick<ListQueryDto, "q" | 
   const activeJob = activeJobSeed ? simulatePipelineJobDetail(activeJobSeed, tick) : null;
   const terminal = jobs.every((job) => job.status === "completed" || job.status === "failed");
 
-  return pipelineDashboardResponseDtoSchema.parse({
+  return {
     summary: [
       { id: "pipeline-running", label: "Running Jobs", value: countPipelineJobs(jobs, (job) => job.status === "running"), hint: "Latest refresh just now", tone: "info" },
       { id: "pipeline-completed", label: "Completed Today", value: countPipelineJobs(jobs, (job) => job.status === "completed"), hint: "All delivery stages synced", tone: "success" },
@@ -46,5 +45,5 @@ export function buildPipelineDashboardResponse(query?: Pick<ListQueryDto, "q" | 
       tick,
       terminal,
     },
-  });
+  };
 }

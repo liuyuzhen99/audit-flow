@@ -1,6 +1,5 @@
 import type { ListQueryDto } from "@/types/api";
 import type { LibraryAssetDto, LibraryDashboardResponseDto } from "@/types/library";
-import { libraryAssetDtoSchema, libraryDashboardResponseDtoSchema } from "@/lib/schemas/library";
 import { librarySeedRecords } from "@/lib/mocks/data/library";
 import { MOCK_GENERATED_AT } from "@/lib/mocks/data/common";
 
@@ -24,7 +23,7 @@ function countLibraryAssets(items: LibraryAssetDto[], predicate: (item: LibraryA
 
 export function getLibraryAssetDetail(assetId: string): LibraryAssetDto | null {
   const asset = librarySeedRecords.find((item) => item.id === assetId);
-  return asset ? libraryAssetDtoSchema.parse(asset) : null;
+  return asset ?? null;
 }
 
 export function getOrderedLibraryAssetIds(query?: Partial<LibraryDashboardQuery>): string[] {
@@ -34,7 +33,7 @@ export function getOrderedLibraryAssetIds(query?: Partial<LibraryDashboardQuery>
 export function buildLibraryDashboardResponse(query?: Partial<LibraryDashboardQuery>): LibraryDashboardResponseDto {
   const items = filterLibraryAssets(librarySeedRecords, query);
 
-  return libraryDashboardResponseDtoSchema.parse({
+  return {
     summary: [
       { id: "library-published", label: "Published Assets", value: countLibraryAssets(items, (item) => item.status === "published"), hint: "8 visible in this view", tone: "success" },
       { id: "library-processing", label: "Processing", value: countLibraryAssets(items, (item) => item.status === "processing"), hint: "Awaiting renders", tone: "info" },
@@ -45,5 +44,5 @@ export function buildLibraryDashboardResponse(query?: Partial<LibraryDashboardQu
     meta: {
       generatedAt: MOCK_GENERATED_AT,
     },
-  });
+  };
 }

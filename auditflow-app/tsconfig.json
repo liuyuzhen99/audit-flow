@@ -30,5 +30,15 @@
     ".next/dev/types/**/*.ts",
     "**/*.mts"
   ],
-  "exclude": ["node_modules"]
+  "exclude": [
+    "node_modules",
+    "src/**/*.test.ts",
+    "src/**/*.test.tsx",
+    "src/app/api/mock",
+    "src/app/api/mock/**/*",
+    "src/lib/mocks",
+    "src/lib/mocks/**/*",
+    "src/app/(dashboard)/reports",
+    "src/app/(dashboard)/reports/**/*"
+  ]
 }

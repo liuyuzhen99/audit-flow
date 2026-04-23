@@ -19,10 +19,56 @@ export async function POST(
   context: { params: Promise<{ artistId: string }> },
 ) {
   const { artistId } = await context.params;
+  const baseUrl = getBackendBaseUrl();
+  const syncUrl = new URL(`${baseUrl}/internal/phase3/spotify/sync-followed-artists`);
   const backendUrl = new URL(`${getBackendBaseUrl()}/v1/artists/${artistId}/resync`);
+  const artistsLookupUrl = new URL(`${baseUrl}/v1/artists`);
+  artistsLookupUrl.searchParams.set("q", artistId);
+  artistsLookupUrl.searchParams.set("page_size", "1");
+  artistsLookupUrl.searchParams.set("sort", "name");
   backendUrl.searchParams.set("days", request.nextUrl.searchParams.get("days") ?? "14");
 
   try {
+    const syncResponse = await fetch(syncUrl, { method: "POST", cache: "no-store" });
+    const syncPayload = (await syncResponse.json()) as Record<string, unknown> & { detail?: string };
+
+    if (!syncResponse.ok) {
+      return createErrorResponse(
+        syncResponse.status,
+        "artist_resync_failed",
+        syncPayload.detail ?? "Failed to sync Spotify followed artists",
+      );
+    }
+
+    const artistsResponse = await fetch(artistsLookupUrl, { cache: "no-store" });
+    const artistsPayload = (await artistsResponse.json()) as { items?: Array<{ artist_id?: string }> } & {
+      detail?: string;
+    };
+
+    if (!artistsResponse.ok) {
+      return createErrorResponse(
+        artistsResponse.status,
+        "artist_resync_failed",
+        artistsPayload.detail ?? "Failed to refresh artists after Spotify sync",
+      );
+    }
+
+    const stillFollowed = (artistsPayload.items ?? []).some((item) => item.artist_id === artistId);
+    if (!stillFollowed) {
+      const now = new Date().toISOString();
+      return NextResponse.json({
+        runId: `spotify-sync-${artistId}`,
+        artistId,
+        status: "completed",
+        discoveredCount: 0,
+        startedAt: normalizeBackendTimestamp(now),
+        completedAt: normalizeBackendTimestamp(now),
+        channelRunId: `spotify-sync-${artistId}`,
+        discoveryRunId: `spotify-sync-${artistId}`,
+        artistRemoved: true,
+      });
+    }
+
     const response = await fetch(backendUrl, { method: "POST", cache: "no-store" });
     const payload = (await response.json()) as Record<string, unknown> & { detail?: string };
 
@@ -43,6 +89,7 @@ export async function POST(
       completedAt: normalizeBackendTimestamp(payload.completed_at),
       channelRunId: payload.channel_run_id,
       discoveryRunId: payload.discovery_run_id,
+      artistRemoved: false,
     });
   } catch (error) {
     return createErrorResponse(

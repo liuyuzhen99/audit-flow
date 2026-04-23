@@ -16,6 +16,7 @@ import { cn } from "@/lib/utils";
 declare module "@tanstack/react-table" {
   interface ColumnMeta<TData extends RowData, TValue> {
     sortKey?: string;
+    width?: string;
   }
 }
 /* eslint-enable @typescript-eslint/no-unused-vars */
@@ -38,6 +39,9 @@ type DataTableProps<TData extends object, TValue> = {
   sortDirection?: SortDirection;
   onSortChange?: (nextSort: SortChange) => void;
   className?: string;
+  tableClassName?: string;
+  headerCellClassName?: string;
+  bodyCellClassName?: string;
 };
 
 export function DataTable<TData extends object, TValue>({
@@ -53,6 +57,9 @@ export function DataTable<TData extends object, TValue>({
   onSortChange,
   sortBy,
   sortDirection,
+  tableClassName,
+  headerCellClassName,
+  bodyCellClassName,
 }: DataTableProps<TData, TValue>) {
   // eslint-disable-next-line react-hooks/incompatible-library
   const table = useReactTable({
@@ -75,8 +82,15 @@ export function DataTable<TData extends object, TValue>({
   }
 
   return (
-    <div className={cn("overflow-hidden rounded-[24px] border border-[var(--color-border)] bg-white shadow-sm", className)}>
-      <table className="min-w-full border-collapse text-left text-sm text-slate-700">
+    <div className={cn("overflow-x-auto overflow-y-hidden rounded-[24px] border border-[var(--color-border)] bg-white shadow-sm", className)}>
+      <table className={cn("min-w-full table-fixed border-collapse text-left text-sm text-slate-700", tableClassName)}>
+        <colgroup>
+          {table.getVisibleLeafColumns().map((column) => {
+            const width = column.columnDef.meta?.width;
+
+            return <col key={column.id} style={width ? { width, minWidth: width, maxWidth: width } : undefined} />;
+          })}
+        </colgroup>
         <thead className="bg-slate-50 text-xs uppercase tracking-[0.16em] text-slate-500">
           {table.getHeaderGroups().map((headerGroup) => (
             <tr key={headerGroup.id}>
@@ -86,11 +100,15 @@ export function DataTable<TData extends object, TValue>({
                 const nextSortDirection = isSortedColumn && sortDirection === "asc" ? "desc" : "asc";
 
                 return (
-                  <th className="px-5 py-4 font-semibold" key={header.id} scope="col">
+                  <th
+                    className={cn("whitespace-nowrap px-5 py-4 font-semibold", headerCellClassName)}
+                    key={header.id}
+                    scope="col"
+                  >
                     {header.isPlaceholder ? null : sortKey && onSortChange ? (
                       <button
                         aria-label={getSortButtonLabel(header.getContext())}
-                        className="inline-flex items-center gap-2 text-left text-inherit transition hover:text-slate-900"
+                        className="inline-flex items-center gap-2 whitespace-nowrap text-left text-inherit transition hover:text-slate-900"
                         onClick={() => onSortChange({ sortBy: sortKey, sortDirection: nextSortDirection })}
                         type="button"
                       >
@@ -115,7 +133,7 @@ export function DataTable<TData extends object, TValue>({
           {table.getRowModel().rows.map((row) => (
             <tr className="border-t border-slate-100 align-top" key={row.id}>
               {row.getVisibleCells().map((cell) => (
-                <td className="px-5 py-4" key={cell.id}>
+                <td className={cn("px-5 py-4", bodyCellClassName)} key={cell.id}>
                   {flexRender(cell.column.columnDef.cell, cell.getContext())}
                 </td>
               ))}

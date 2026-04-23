@@ -1,4 +1,4 @@
-import type { PollingMetaDto, ResponseMetaDto, SummaryMetricDto } from "@/types/api";
+import type { PaginationMetaDto, PollingMetaDto, ResponseMetaDto, SummaryMetricDto } from "@/types/api";
 import type { StatusTone } from "@/types/common";
 
 export type PipelineRunStatus = "queued" | "running" | "completed" | "failed";
@@ -46,12 +46,6 @@ export type PipelineJobDetailDto = PipelineJobDto & {
   deliverables: PipelineDeliverableDto[];
 };
 
-export type PipelineListResponseDto = {
-  jobs: PipelineJobDto[];
-  meta: ResponseMetaDto;
-  polling: PollingMetaDto;
-};
-
 export type PipelineDashboardResponseDto = {
   summary: SummaryMetricDto[];
   jobs: PipelineJobDto[];
@@ -60,35 +54,62 @@ export type PipelineDashboardResponseDto = {
   polling: PollingMetaDto;
 };
 
-export type PipelineJobViewModel = {
-  id: string;
-  title: string;
-  statusLabel: string;
-  statusTone: StatusTone;
-  elapsedLabel: string;
-  remainingLabel: string;
+export type PipelineWorkflowStatus = "discovered" | "pending_review" | "accepted" | "rejected";
+export type Phase4PipelineStageStatus = "not_started" | "pending" | "approved" | "rejected";
+export type TranslationWorkflowStatus = "not_started" | "pending" | "approved" | "rejected";
+export type PipelineStageName =
+  | "transcript_review"
+  | "taste_audit"
+  | "manual_review"
+  | "translation_review"
+  | "final_asset_approval";
+
+export type Phase4PipelineStageDto = {
+  stage: PipelineStageName;
+  status: Phase4PipelineStageStatus;
+};
+
+export type Phase4PipelineItemDto = {
+  candidateId: string;
+  artistId: string;
+  artistName: string;
+  candidateTitle: string;
+  workflowStatus: PipelineWorkflowStatus;
+  currentStage: PipelineStageName | "completed" | "rejected";
+  stages: Phase4PipelineStageDto[];
+  translation: {
+    status: TranslationWorkflowStatus;
+    updatedAt?: string;
+  };
+  lastUpdatedAt: string;
+};
+
+export type Phase4PipelineDashboardResponseDto = {
+  summary: SummaryMetricDto[];
+  items: Phase4PipelineItemDto[];
+  pagination: PaginationMetaDto;
+  meta: ResponseMetaDto;
+  polling: PollingMetaDto;
 };
 
 export type PipelineStageViewModel = {
   id: string;
   label: string;
   statusLabel: string;
-  statusTone: "success" | "warning" | "danger" | "info" | "neutral";
-  progressLabel: string;
+  statusTone: StatusTone;
 };
 
-export type PipelineLogEntryViewModel = {
-  id: string;
-  tick: number;
-  displayLine: string;
-  toneClassName: string;
+export type PipelineRowViewModel = {
+  candidateId: string;
+  artistId: string;
+  artistName: string;
+  candidateTitle: string;
+  workflowStatusLabel: string;
+  workflowStatusTone: StatusTone;
+  currentStageLabel: string;
+  translationStatusLabel: string;
+  translationStatusTone: StatusTone;
+  lastUpdatedAtLabel: string;
+  stages: PipelineStageViewModel[];
 };
 
-export type PipelineDeliverableViewModel = {
-  id: string;
-  label: string;
-  description: string;
-  assetId: string | null;
-  statusLabel: string;
-  statusTone: "success" | "warning" | "danger" | "info" | "neutral";
-};

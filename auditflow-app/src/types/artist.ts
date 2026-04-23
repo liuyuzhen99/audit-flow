@@ -65,6 +65,16 @@ export type ArtistDto = {
 
 export type ArtistsDashboardResponseDto = {
   summary?: SummaryMetricDto[];
+  stats?: {
+    totalArtists: number;
+    visibleArtists: number;
+    totalCompletedArtists: number;
+    visibleCompletedArtists: number;
+    totalFailedArtists: number;
+    visibleFailedArtists: number;
+    totalCandidates: number;
+    visibleCandidates: number;
+  };
   items: ArtistDto[];
   pagination: PaginationMetaDto;
   meta: ResponseMetaDto;
@@ -102,6 +112,7 @@ export type ArtistResyncResponseDto = {
   completedAt: string;
   channelRunId: string;
   discoveryRunId: string;
+  artistRemoved?: boolean;
 };
 
 export type ArtistsListQueryDto = ListQueryDto & {

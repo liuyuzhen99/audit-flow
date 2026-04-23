@@ -4,7 +4,9 @@ import {
   getAuditDecisionPresentation,
   getArtistAuditPresentation,
   getLibraryStatusPresentation,
+  getLegacyQueueStatusPresentation,
   getQueueStatusPresentation,
+  getReviewTypePresentation,
 } from "@/lib/status/audit";
 
 describe("audit status presentation", () => {
@@ -16,8 +18,22 @@ describe("audit status presentation", () => {
   });
 
   it("maps queue statuses", () => {
-    expect(getQueueStatusPresentation("manualReview")).toEqual({
+    expect(getQueueStatusPresentation("pending")).toEqual({
+      label: "Pending",
+      tone: "warning",
+    });
+  });
+
+  it("maps legacy queue statuses for mock surfaces", () => {
+    expect(getLegacyQueueStatusPresentation("manualReview")).toEqual({
       label: "Manual review",
+      tone: "warning",
+    });
+  });
+
+  it("maps review types", () => {
+    expect(getReviewTypePresentation("manual_review")).toEqual({
+      label: "Manual Review",
       tone: "warning",
     });
   });

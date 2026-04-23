@@ -1,4 +1,4 @@
-import { render, screen } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const mockReplace = vi.fn();
@@ -8,6 +8,10 @@ const mockNavigation = {
 };
 
 const mockUsePollingResource = vi.fn();
+const mockApproveReview = vi.fn();
+const mockRejectReview = vi.fn();
+
+vi.stubGlobal("prompt", vi.fn(() => "looks good"));
 
 vi.mock("next/navigation", () => ({
   usePathname: () => mockNavigation.pathname,
@@ -19,52 +23,53 @@ vi.mock("@/hooks/use-polling-resource", () => ({
   usePollingResource: () => mockUsePollingResource(),
 }));
 
+vi.mock("@/lib/api/queue", async () => {
+  const actual = await vi.importActual<typeof import("@/lib/api/queue")>("@/lib/api/queue");
+  return {
+    ...actual,
+    approveReview: (...args: unknown[]) => mockApproveReview(...args),
+    rejectReview: (...args: unknown[]) => mockRejectReview(...args),
+  };
+});
+
 describe("QueueDashboardClient", () => {
   beforeEach(() => {
     mockReplace.mockReset();
     mockNavigation.pathname = "/queue";
     mockNavigation.searchParams = new URLSearchParams();
     mockUsePollingResource.mockReset();
+    mockApproveReview.mockReset();
+    mockRejectReview.mockReset();
     mockUsePollingResource.mockReturnValue({
       data: {
-        summary: [{ label: "Queued", value: "3", hint: "Awaiting review", tone: "info" }],
+        summary: [{ label: "Pending Reviews", value: "1", hint: "Awaiting human action", tone: "warning" }],
         rows: [
           {
-            id: "queue-1",
-            title: "Midnight City",
+            reviewId: "review-1",
+            artistId: "artist-1",
             artistName: "M83",
-            statusLabel: "Processing",
+            candidateId: "candidate-1",
+            candidateTitle: "Midnight City (Official Video)",
+            reviewType: "transcript_review",
+            reviewTypeLabel: "Transcript Review",
+            status: "pending",
+            statusLabel: "Pending",
             statusTone: "warning",
-            confidenceLabel: "82%",
-            summaryLabel: "Potential crowd noise detected",
-            progressLabel: "Auditing",
-            progressPercent: 64,
-            reportId: "report-101",
-            updatedLabel: "10:24",
-          },
-          {
-            id: "queue-2",
-            title: "Starboy",
-            artistName: "The Weeknd",
-            statusLabel: "Manual review",
-            statusTone: "warning",
-            confidenceLabel: "72%",
-            summaryLabel: "No report available yet",
-            progressLabel: "Manual review",
-            progressPercent: 100,
-            reportId: null,
-            updatedLabel: "10:28",
+            version: 1,
+            versionLabel: "v1",
+            queuedAtLabel: "Apr 21, 10:24",
+            sourceUrl: "https://example.com/watch?v=1",
           },
         ],
-        pagination: { page: 1, pageSize: 10, total: 2, totalPages: 1 },
-        polling: { intervalMs: 4000, tick: 2, terminal: false },
+        pagination: { page: 1, pageSize: 10, total: 1, totalPages: 1 },
+        polling: { intervalMs: 15000, tick: 0, terminal: false },
       },
       error: null,
       isRefreshing: false,
     });
   });
 
-  it("renders queue summary and rows", async () => {
+  it("renders queue summary and review rows", async () => {
     const { QueueDashboardClient } = await import("@/components/features/queue/queue-dashboard-client");
 
     render(
@@ -73,14 +78,14 @@ describe("QueueDashboardClient", () => {
           summary: [],
           rows: [],
           pagination: { page: 1, pageSize: 10, total: 1, totalPages: 1 },
-          polling: { intervalMs: 4000, tick: 2, terminal: false },
+          polling: { intervalMs: 15000, tick: 0, terminal: false },
         }}
       />,
     );
 
-    expect(screen.getByText("Queued")).toBeInTheDocument();
-    expect(screen.getByText("Midnight City")).toBeInTheDocument();
-    expect(screen.getByText("Potential crowd noise detected")).toBeInTheDocument();
+    expect(screen.getByText("Pending Reviews")).toBeInTheDocument();
+    expect(screen.getByText("Midnight City (Official Video)")).toBeInTheDocument();
+    expect(screen.getByText("Transcript Review")).toBeInTheDocument();
     expect(screen.getByText("Live updates")).toBeInTheDocument();
   });
 
@@ -93,27 +98,26 @@ describe("QueueDashboardClient", () => {
           summary: [],
           rows: [],
           pagination: { page: 1, pageSize: 10, total: 1, totalPages: 1 },
-          polling: { intervalMs: 4000, tick: 2, terminal: false },
+          polling: { intervalMs: 15000, tick: 0, terminal: false },
         }}
       />,
     );
 
-    screen.getByRole("button", { name: "Flagged" }).click();
+    screen.getByRole("button", { name: "Rejected" }).click();
 
-    expect(mockReplace).toHaveBeenCalledWith("/queue?status=manualReview");
+    expect(mockReplace).toHaveBeenCalledWith("/queue?status=rejected");
   });
 
-  it("updates the URL when pagination changes", async () => {
-    mockNavigation.searchParams = new URLSearchParams("page=2&pageSize=10");
-    mockUsePollingResource.mockReturnValue({
-      data: {
-        summary: [],
-        rows: [],
-        pagination: { page: 2, pageSize: 10, total: 25, totalPages: 3 },
-        polling: { intervalMs: 4000, tick: 2, terminal: false },
-      },
-      error: null,
-      isRefreshing: false,
+  it("submits approve action with expected version and actor id", async () => {
+    mockApproveReview.mockResolvedValue({
+      reviewId: "review-1",
+      status: "approved",
+      version: 2,
+      subjectId: "candidate-1",
+      candidateStatus: "pending_review",
+      nextReviewId: "review-2",
+      nextReviewType: "taste_audit",
+      decidedAt: "2026-04-21T10:30:00.000Z",
     });
 
     const { QueueDashboardClient } = await import("@/components/features/queue/queue-dashboard-client");
@@ -123,80 +127,27 @@ describe("QueueDashboardClient", () => {
         initialDashboard={{
           summary: [],
           rows: [],
-          pagination: { page: 2, pageSize: 10, total: 25, totalPages: 3 },
-          polling: { intervalMs: 4000, tick: 2, terminal: false },
-        }}
-      />,
-    );
-
-    screen.getByRole("button", { name: "Next Page" }).click();
-
-    expect(mockReplace).toHaveBeenCalledWith("/queue?page=3");
-  });
-
-  it("renders route-to-pipeline action as a link", async () => {
-    const { QueueDashboardClient } = await import("@/components/features/queue/queue-dashboard-client");
-
-    render(
-      <QueueDashboardClient
-        initialDashboard={{
-          summary: [],
-          rows: [],
           pagination: { page: 1, pageSize: 10, total: 1, totalPages: 1 },
-          polling: { intervalMs: 4000, tick: 2, terminal: false },
+          polling: { intervalMs: 15000, tick: 0, terminal: false },
         }}
       />,
     );
 
-    expect(screen.getByRole("link", { name: /route midnight city to pipeline/i })).toHaveAttribute("href", "/pipeline");
-  });
+    fireEvent.click(screen.getByRole("button", { name: "Approve" }));
 
-  it("renders report action as a live link when a report exists", async () => {
-    const { QueueDashboardClient } = await import("@/components/features/queue/queue-dashboard-client");
-
-    render(
-      <QueueDashboardClient
-        initialDashboard={{
-          summary: [],
-          rows: [],
-          pagination: { page: 1, pageSize: 10, total: 1, totalPages: 1 },
-          polling: { intervalMs: 4000, tick: 2, terminal: false },
-        }}
-      />,
-    );
-
-    expect(screen.getByRole("link", { name: /view report for midnight city/i })).toHaveAttribute("href", "/reports/report-101");
-  });
-
-  it("renders report action as disabled when no report exists", async () => {
-    const { QueueDashboardClient } = await import("@/components/features/queue/queue-dashboard-client");
-
-    render(
-      <QueueDashboardClient
-        initialDashboard={{
-          summary: [],
-          rows: [],
-          pagination: { page: 1, pageSize: 10, total: 1, totalPages: 1 },
-          polling: { intervalMs: 4000, tick: 2, terminal: false },
-        }}
-      />,
-    );
-
-    expect(screen.getByRole("button", { name: /no report available for starboy/i })).toBeDisabled();
-  });
-
-  it("shows an error banner while preserving the last successful queue snapshot", async () => {
-    mockUsePollingResource.mockReturnValue({
-      data: {
-        summary: [],
-        rows: [],
-        pagination: { page: 1, pageSize: 10, total: 0, totalPages: 1 },
-        polling: { intervalMs: 4000, tick: 2, terminal: false },
-      },
-      error: new Error("Refresh failed"),
-      isRefreshing: false,
+    await waitFor(() => {
+      expect(mockApproveReview).toHaveBeenCalledWith({
+        reviewId: "review-1",
+        expectedVersion: 1,
+        comment: "looks good",
+        actorId: "frontend-user-1",
+      });
     });
 
+    expect(screen.getByText(/Next step: taste_audit/i)).toBeInTheDocument();
+  });
+
+  it("renders audit log action as a raw json link", async () => {
     const { QueueDashboardClient } = await import("@/components/features/queue/queue-dashboard-client");
 
     render(
@@ -204,13 +155,35 @@ describe("QueueDashboardClient", () => {
         initialDashboard={{
           summary: [],
           rows: [],
-          pagination: { page: 1, pageSize: 10, total: 0, totalPages: 1 },
-          polling: { intervalMs: 4000, tick: 2, terminal: false },
+          pagination: { page: 1, pageSize: 10, total: 1, totalPages: 1 },
+          polling: { intervalMs: 15000, tick: 0, terminal: false },
         }}
       />,
     );
 
-    expect(screen.getByText("Live updates paused")).toBeInTheDocument();
-    expect(screen.getByText("Updates paused")).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Audit Log" })).toHaveAttribute(
+      "href",
+      "/api/audit-log?aggregateType=candidate&aggregateId=candidate-1",
+    );
+  });
+
+  it("opens pipeline with the candidate-specific query instead of the generic page", async () => {
+    const { QueueDashboardClient } = await import("@/components/features/queue/queue-dashboard-client");
+
+    render(
+      <QueueDashboardClient
+        initialDashboard={{
+          summary: [],
+          rows: [],
+          pagination: { page: 1, pageSize: 10, total: 1, totalPages: 1 },
+          polling: { intervalMs: 15000, tick: 0, terminal: false },
+        }}
+      />,
+    );
+
+    expect(screen.getByRole("link", { name: "Open Pipeline" })).toHaveAttribute(
+      "href",
+      "/pipeline?q=candidate-1&candidateId=candidate-1",
+    );
   });
 });

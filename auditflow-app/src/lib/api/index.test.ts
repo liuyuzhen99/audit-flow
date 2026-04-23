@@ -2,8 +2,8 @@ import { describe, expect, it, vi } from "vitest";
 
 import { getArtistCandidates, getArtistsDashboard } from "@/lib/api/artists";
 import { getLibraryDashboard } from "@/lib/api/library";
-import { getPipelineDashboard, stopPipelineJob } from "@/lib/api/pipeline";
-import { getQueueDashboard } from "@/lib/api/queue";
+import { getPipelineDashboard } from "@/lib/api/pipeline";
+import { approveReview, getAuditLog, getQueueDashboard, rejectReview } from "@/lib/api/queue";
 import { getReportDetail } from "@/lib/api/reports";
 
 function createFetchMock(payload: unknown, ok = true) {
@@ -89,23 +89,23 @@ describe("module api clients", () => {
       polling: { intervalMs: 4000, tick: 2, terminal: false },
     });
 
-    await getQueueDashboard({ fetcher: fetchMock, query: { q: "M83", status: "manualReview", tick: 2 } });
+    await getQueueDashboard({ fetcher: fetchMock, query: { q: "M83", status: "pending", tick: 2 } });
 
-    expect(fetchMock).toHaveBeenCalledWith("/api/mock/queue?q=M83&status=manualReview&tick=2", undefined);
+    expect(fetchMock).toHaveBeenCalledWith("/api/queue?q=M83&status=pending&tick=2", undefined);
   });
 
   it("fetches pipeline dashboard data with tick", async () => {
     const fetchMock = createFetchMock({
       summary: [],
-      jobs: [],
-      activeJob: null,
+      items: [],
+      pagination: { page: 1, pageSize: 10, total: 0, totalPages: 1 },
       meta: { generatedAt: "2026-04-09T10:00:00.000Z" },
       polling: { intervalMs: 4000, tick: 2, terminal: false },
     });
 
     await getPipelineDashboard({ fetcher: fetchMock, query: { tick: 2 } });
 
-    expect(fetchMock).toHaveBeenCalledWith("/api/mock/pipeline?tick=2", undefined);
+    expect(fetchMock).toHaveBeenCalledWith("/api/pipeline?tick=2", undefined);
   });
 
   it("fetches library dashboard data", async () => {
@@ -113,7 +113,79 @@ describe("module api clients", () => {
 
     await getLibraryDashboard({ fetcher: fetchMock });
 
-    expect(fetchMock).toHaveBeenCalledWith("/api/mock/library", undefined);
+    expect(fetchMock).toHaveBeenCalledWith("/api/library", undefined);
+  });
+
+  it("fetches audit log data", async () => {
+    const fetchMock = createFetchMock({
+      items: [],
+      pagination: { page: 1, pageSize: 20, total: 0, totalPages: 1 },
+      meta: { generatedAt: "2026-04-09T10:00:00.000Z" },
+    });
+
+    await getAuditLog({
+      fetcher: fetchMock,
+      aggregateType: "candidate",
+      aggregateId: "candidate-1",
+    });
+
+    expect(fetchMock).toHaveBeenCalledWith(
+      "/api/audit-log?aggregateType=candidate&aggregateId=candidate-1",
+      undefined,
+    );
+  });
+
+  it("posts approve review with headers and body", async () => {
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({
+        reviewId: "review-1",
+        status: "approved",
+        version: 4,
+        subjectId: "candidate-1",
+        candidateStatus: "accepted",
+        nextReviewId: null,
+        nextReviewType: null,
+        decidedAt: "2026-04-09T10:06:00.000Z",
+      }),
+    });
+
+    const result = await approveReview({
+      fetcher: fetchMock,
+      reviewId: "review-1",
+      expectedVersion: 3,
+      comment: "Looks good",
+      actorId: "frontend-user-1",
+    });
+
+    expect(fetchMock).toHaveBeenCalledWith(
+      "/api/reviews/review-1/approve",
+      expect.objectContaining({
+        method: "POST",
+        headers: expect.objectContaining({
+          "Content-Type": "application/json",
+          "X-Actor-Id": "frontend-user-1",
+        }),
+        body: JSON.stringify({ expectedVersion: 3, comment: "Looks good" }),
+      }),
+    );
+    expect(result.status).toBe("approved");
+  });
+
+  it("posts reject review and throws on backend error", async () => {
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: false,
+      json: async () => ({ message: "Stale version" }),
+    });
+
+    await expect(
+      rejectReview({
+        fetcher: fetchMock,
+        reviewId: "review-1",
+        expectedVersion: 3,
+        comment: "Outdated payload",
+      }),
+    ).rejects.toThrow("Stale version");
   });
 
   it("fetches report detail data with expanded phase 5 fields", async () => {
@@ -159,30 +231,5 @@ describe("module api clients", () => {
     const fetchMock = createFetchMock({ message: "Report not found" }, false);
 
     await expect(getReportDetail({ fetcher: fetchMock, reportId: "report-missing" })).rejects.toThrow("Report not found");
-  });
-
-  it("posts stop pipeline job and returns typed response", async () => {
-    const fetchMock = vi.fn().mockResolvedValue({
-      ok: true,
-      json: async () => ({ success: true, jobId: "job-1", message: "Job job-1 has been requested to stop." }),
-    });
-
-    const result = await stopPipelineJob({ fetcher: fetchMock, jobId: "job-1" });
-
-    expect(fetchMock).toHaveBeenCalledWith(
-      "/api/mock/pipeline/stop",
-      expect.objectContaining({ method: "POST", body: JSON.stringify({ jobId: "job-1" }) }),
-    );
-    expect(result.success).toBe(true);
-    expect(result.jobId).toBe("job-1");
-  });
-
-  it("throws when stop pipeline job returns a non-ok response", async () => {
-    const fetchMock = vi.fn().mockResolvedValue({
-      ok: false,
-      json: async () => ({ message: "Job not found" }),
-    });
-
-    await expect(stopPipelineJob({ fetcher: fetchMock, jobId: "job-99" })).rejects.toThrow("Job not found");
   });
 });

@@ -2,8 +2,9 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Bell, Cog, Search, Waves } from "lucide-react";
+import { Bell, Cog, Waves } from "lucide-react";
 
+import { SearchInput } from "@/components/shared/search-input";
 import { APP_NAME } from "@/lib/constants";
 import { isActivePath, PRIMARY_NAV_ITEMS } from "@/lib/nav";
 import { cn } from "@/lib/utils";
@@ -49,15 +50,11 @@ export function AppHeader() {
         </div>
 
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
-          <label className="flex min-w-[260px] items-center gap-2 rounded-xl border border-[var(--color-border)] bg-white px-4 py-2 text-slate-500 shadow-sm">
-            <Search className="h-4 w-4" />
-            <input
-              aria-label="Search"
-              className="w-full border-0 bg-transparent text-sm outline-none placeholder:text-slate-400"
-              placeholder="Search..."
-              type="search"
-            />
-          </label>
+          <SearchInput
+            className="min-w-[260px] rounded-xl px-4 py-2"
+            inputClassName="text-sm"
+            placeholder="Search..."
+          />
 
           <div className="flex items-center gap-2 self-end sm:self-auto">
             <button

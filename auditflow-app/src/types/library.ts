@@ -9,7 +9,7 @@ import type {
   AuditTimelineEventDto,
 } from "@/types/audit-report";
 
-export type LibraryStatus = "published" | "processing" | "review" | "failed";
+export type LibraryStatus = "published" | "processing" | "review" | "failed" | "accepted";
 
 export type AssetVersionDto = {
   id: string;
@@ -46,14 +46,26 @@ export type LibraryAssetDto = {
   versions: AssetVersionDto[];
 };
 
-export type LibraryListResponseDto = {
+export type LibraryDashboardResponseDto = {
+  summary: SummaryMetricDto[];
   items: LibraryAssetDto[];
   meta: ResponseMetaDto;
 };
 
-export type LibraryDashboardResponseDto = {
+export type Phase4LibraryAssetDto = {
+  id: string;
+  artistId: string;
+  artistName: string;
+  title: string;
+  sourceUrl: string;
+  approvedAt: string | null;
+  approvedBy: string | null;
+  status: "accepted";
+};
+
+export type Phase4LibraryDashboardResponseDto = {
   summary: SummaryMetricDto[];
-  items: LibraryAssetDto[];
+  items: Phase4LibraryAssetDto[];
   meta: ResponseMetaDto;
 };
 
@@ -63,16 +75,9 @@ export type LibraryAssetCardViewModel = {
   artistName: string;
   statusLabel: string;
   statusTone: StatusTone;
-  durationLabel: string;
-  resolutionLabel: string;
-  dateLabel: string;
-  gradientClassName: string;
-};
-
-export type LibraryAssetVersionViewModel = {
-  id: string;
-  label: string;
-  createdAtLabel: string;
+  approvedAtLabel: string;
+  approvedByLabel: string;
+  sourceUrl: string;
 };
 
 export type ReportSectionItemTone = Exclude<StatusTone, "neutral">;
@@ -120,40 +125,3 @@ export type ReportCommentsSectionViewModel = {
   items: ReportCommentItemViewModel[];
 };
 
-export type SharedAuditSectionsViewModel = {
-  ruleHits: ReportRuleHitsSectionViewModel;
-  timeline: ReportTimelineSectionViewModel;
-  comments: ReportCommentsSectionViewModel;
-};
-
-export type LibraryAssetDetailViewModel = {
-  id: string;
-  title: string;
-  artistName: string;
-  statusLabel: string;
-  statusTone: StatusTone;
-  durationLabel: string;
-  resolutionLabel: string;
-  createdAtLabel: string;
-  sourceStatusLabel: string;
-  gradientClassName: string;
-  mediaPlayer: {
-    title: string;
-    description: string;
-    sourceUrl: string | null;
-    posterUrl: string | null;
-    mimeType: string | null;
-    fallbackTitle: string;
-    fallbackDescription: string;
-  };
-  reportSummary: {
-    title: string;
-    decisionLabel: string;
-    decisionTone: StatusTone;
-    summaryLabel: string;
-    href: string;
-    linkLabel: string;
-  } | null;
-  auditSections: SharedAuditSectionsViewModel | null;
-  versions: LibraryAssetVersionViewModel[];
-};

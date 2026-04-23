@@ -50,34 +50,45 @@ export function adaptArtistsDashboard(data: ArtistsDashboardResponseDto): {
   rows: ArtistTableRowViewModel[];
   pagination: PaginationMetaDto;
 } {
-  const completedCount = data.items.filter((item) => item.syncStatus === "completed").length;
-  const failedCount = data.items.filter((item) => item.syncStatus === "failed" || item.syncStatus === "partial").length;
-  const candidateTotal = data.items.reduce((sum, item) => sum + item.candidateCount, 0);
+  const totalArtists = data.stats?.totalArtists ?? data.pagination.total;
+  const visibleArtists = data.stats?.visibleArtists ?? data.items.length;
+  const totalCompletedArtists =
+    data.stats?.totalCompletedArtists ?? data.items.filter((item) => item.syncStatus === "completed").length;
+  const visibleCompletedArtists =
+    data.stats?.visibleCompletedArtists ?? data.items.filter((item) => item.syncStatus === "completed").length;
+  const totalFailedArtists =
+    data.stats?.totalFailedArtists ??
+    data.items.filter((item) => item.syncStatus === "failed" || item.syncStatus === "partial").length;
+  const visibleFailedArtists =
+    data.stats?.visibleFailedArtists ??
+    data.items.filter((item) => item.syncStatus === "failed" || item.syncStatus === "partial").length;
+  const totalCandidates = data.stats?.totalCandidates ?? data.items.reduce((sum, item) => sum + item.candidateCount, 0);
+  const visibleCandidates = data.stats?.visibleCandidates ?? data.items.reduce((sum, item) => sum + item.candidateCount, 0);
 
   return {
     summary: [
       {
         label: "Artists in View",
-        value: String(data.items.length),
-        hint: `${data.pagination.total} total artists`,
+        value: String(visibleArtists),
+        hint: `${totalArtists} total artists`,
         tone: "info",
       },
       {
-        label: "Completed",
-        value: String(completedCount),
-        hint: "Latest sync completed",
+        label: "Completed in View",
+        value: String(visibleCompletedArtists),
+        hint: `${visibleCompletedArtists} of ${totalCompletedArtists} total artists`,
         tone: "success",
       },
       {
-        label: "Failed",
-        value: String(failedCount),
-        hint: "Failed or partial syncs",
-        tone: failedCount > 0 ? "warning" : "success",
+        label: "Failed in View",
+        value: String(visibleFailedArtists),
+        hint: `${visibleFailedArtists} of ${totalFailedArtists} total artists`,
+        tone: visibleFailedArtists > 0 ? "warning" : "success",
       },
       {
-        label: "Candidates",
-        value: String(candidateTotal),
-        hint: "Candidates on this page",
+        label: "Candidates in View",
+        value: String(visibleCandidates),
+        hint: `${visibleCandidates} of ${totalCandidates} total candidates`,
         tone: "info",
       },
     ],

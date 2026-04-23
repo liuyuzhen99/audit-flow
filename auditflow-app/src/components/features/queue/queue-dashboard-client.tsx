@@ -1,11 +1,11 @@
 "use client";
 
-import type { ColumnDef } from "@tanstack/react-table";
+import { useState } from "react";
 import Link from "next/link";
-import { ArrowRight, FileText } from "lucide-react";
-import { createColumnHelper } from "@tanstack/react-table";
+import { useRouter } from "next/navigation";
+import { createColumnHelper, type ColumnDef } from "@tanstack/react-table";
 
-import { getQueueDashboard } from "@/lib/api/queue";
+import { approveReview, getQueueDashboard, rejectReview } from "@/lib/api/queue";
 import { adaptQueueDashboard } from "@/lib/adapters/queue";
 import { DataTable } from "@/components/shared/data-table";
 import { ErrorState } from "@/components/shared/error-state";
@@ -20,96 +20,45 @@ import type { QueueTableRowViewModel } from "@/types/queue";
 
 const columnHelper = createColumnHelper<QueueTableRowViewModel>();
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-const columns: ColumnDef<QueueTableRowViewModel, any>[] = [
-  columnHelper.accessor("title", {
-    header: "Track",
-    meta: { sortKey: "title" },
+const columns: ColumnDef<QueueTableRowViewModel, string>[] = [
+  columnHelper.accessor("candidateTitle", {
+    header: "Candidate",
+    meta: { sortKey: "candidateTitle" },
     cell: (info) => (
       <div>
-        <p className="text-lg font-semibold text-slate-900">{info.row.original.title}</p>
-        <p className="text-sm text-slate-500">{info.row.original.artistName}</p>
+        <p className="text-base font-semibold text-slate-900">{info.row.original.candidateTitle}</p>
+        <a
+          className="text-sm text-slate-500 hover:text-[var(--color-primary)]"
+          href={info.row.original.sourceUrl}
+          rel="noreferrer"
+          target="_blank"
+        >
+          Open source video
+        </a>
       </div>
     ),
   }),
+  columnHelper.accessor("artistName", {
+    header: "Artist",
+    meta: { sortKey: "artistName" },
+    cell: (info) => <span className="text-sm font-medium text-slate-700">{info.getValue()}</span>,
+  }),
+  columnHelper.accessor("reviewTypeLabel", {
+    header: "Review Type",
+    meta: { sortKey: "reviewType" },
+  }),
   columnHelper.accessor("statusLabel", {
-    header: "Audit Status",
+    header: "Status",
     meta: { sortKey: "status" },
     cell: (info) => <StatusBadge label={info.getValue()} tone={info.row.original.statusTone} />,
   }),
-  columnHelper.accessor("confidenceLabel", {
-    header: "Confidence",
-    meta: { sortKey: "confidence" },
-    cell: (info) => <span className="text-base font-semibold text-slate-800">{info.getValue()}</span>,
+  columnHelper.accessor("versionLabel", {
+    header: "Version",
+    meta: { sortKey: "version" },
   }),
-  columnHelper.accessor("summaryLabel", {
-    header: "Rule Summary",
-    cell: (info) => (
-      <div>
-        <p className="text-sm text-slate-600">{info.getValue()}</p>
-        <p className="mt-2 text-xs text-slate-400">Updated {info.row.original.updatedLabel}</p>
-      </div>
-    ),
-  }),
-  columnHelper.accessor("progressLabel", {
-    header: "Progress",
-    meta: { sortKey: "progress" },
-    cell: (info) => (
-      <div className="space-y-2">
-        <p className="text-sm font-medium text-slate-600">{info.getValue()}</p>
-        <div className="h-2 rounded-full bg-slate-100">
-          <div
-            className="h-2 rounded-full bg-[var(--color-primary)]"
-            style={{ width: `${info.row.original.progressPercent}%` }}
-          />
-        </div>
-      </div>
-    ),
-  }),
-  // Actions column — fixed width to prevent overflow on 1280px viewports
-  columnHelper.display({
-    id: "actions",
-    header: "Actions",
-    size: 140,
-    cell: (info) => {
-      const row = info.row.original;
-
-      return (
-        <div className="flex items-center gap-2">
-          {/* Route to Pipeline — always available */}
-          <Link
-            aria-label={`Route ${row.title} to Pipeline`}
-            className="flex h-8 w-8 items-center justify-center rounded-xl border border-[var(--color-border)] text-slate-500 hover:border-[var(--color-primary)] hover:text-[var(--color-primary)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-primary)]"
-            href="/pipeline"
-            title="Route to Pipeline"
-          >
-            <ArrowRight className="h-4 w-4" />
-          </Link>
-
-          {/* View Report — live when a report exists */}
-          {row.reportId ? (
-            <Link
-              aria-label={`View report for ${row.title}`}
-              className="flex h-8 w-8 items-center justify-center rounded-xl border border-[var(--color-border)] text-slate-500 hover:border-[var(--color-primary)] hover:text-[var(--color-primary)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-primary)]"
-              href={`/reports/${row.reportId}`}
-              title="View report"
-            >
-              <FileText className="h-4 w-4" />
-            </Link>
-          ) : (
-            <button
-              aria-label={`No report available for ${row.title}`}
-              className="flex h-8 w-8 cursor-not-allowed items-center justify-center rounded-xl border border-[var(--color-border)] text-slate-200"
-              disabled
-              title="No report available"
-              type="button"
-            >
-              <FileText className="h-4 w-4" />
-            </button>
-          )}
-        </div>
-      );
-    },
+  columnHelper.accessor("queuedAtLabel", {
+    header: "Queued At",
+    meta: { sortKey: "queuedAt" },
   }),
 ];
 
@@ -121,13 +70,22 @@ type QueueDashboardClientProps = {
 
 const statusOptions = [
   { label: "All", value: undefined },
-  { label: "Processing", value: "auditing" },
-  { label: "Flagged", value: "manualReview" },
-  { label: "Completed", value: "autoApproved" },
+  { label: "Pending", value: "pending" },
+  { label: "Approved", value: "approved" },
+  { label: "Rejected", value: "rejected" },
 ] as const;
 
 export function QueueDashboardClient({ initialDashboard }: QueueDashboardClientProps) {
+  const router = useRouter();
   const { query, searchValue, setPage, setPageSize, setSearchValue, setSort, setStatus } = useListQueryState();
+  const [isSearchPending, setIsSearchPending] = useState(false);
+  const [actionState, setActionState] = useState<{
+    reviewId: string | null;
+    kind: "approve" | "reject" | null;
+    message: string | null;
+    error: string | null;
+  }>({ reviewId: null, kind: null, message: null, error: null });
+
   const { data, error, isRefreshing } = usePollingResource({
     initialData: initialDashboard,
     load: async (nextTick) =>
@@ -144,12 +102,124 @@ export function QueueDashboardClient({ initialDashboard }: QueueDashboardClientP
           },
         }),
       ),
+    paused: isSearchPending,
     resetKey: `${query.page}|${query.pageSize}|${query.q ?? ""}|${query.status ?? ""}|${query.sortBy ?? ""}|${query.sortDirection ?? ""}`,
   });
 
+  const handleDecision = async (row: QueueTableRowViewModel, kind: "approve" | "reject") => {
+    const comment = window.prompt(
+      kind === "approve" ? "Optional approval comment" : "Optional rejection comment",
+      "",
+    );
+
+    setActionState({ reviewId: row.reviewId, kind, message: null, error: null });
+
+    try {
+      const result =
+        kind === "approve"
+          ? await approveReview({
+              reviewId: row.reviewId,
+              expectedVersion: row.version,
+              comment: comment || undefined,
+              actorId: "frontend-user-1",
+            })
+          : await rejectReview({
+              reviewId: row.reviewId,
+              expectedVersion: row.version,
+              comment: comment || undefined,
+              actorId: "frontend-user-1",
+            });
+
+      setActionState({
+        reviewId: row.reviewId,
+        kind,
+        message:
+          kind === "approve"
+            ? `Approved ${row.candidateTitle}. ${result.nextReviewType ? `Next step: ${result.nextReviewType}.` : "Workflow advanced."}`
+            : `Rejected ${row.candidateTitle}. Candidate status is now ${result.candidateStatus}.`,
+        error: null,
+      });
+      if (typeof router.refresh === "function") {
+        router.refresh();
+      }
+    } catch (decisionError) {
+      setActionState({
+        reviewId: row.reviewId,
+        kind,
+        message: null,
+        error:
+          decisionError instanceof Error
+            ? decisionError.message
+            : "Review decision failed. Refresh and try again.",
+      });
+    }
+  };
+
+  const actionColumn: ColumnDef<QueueTableRowViewModel, string> = columnHelper.display({
+    id: "actions",
+    header: "Actions",
+    cell: (info) => {
+      const row = info.row.original;
+      const isPending = actionState.reviewId === row.reviewId && actionState.kind !== null;
+      const canDecide = row.status === "pending";
+      const canOpenPipeline = row.status === "pending" || (row.status === "approved" && row.reviewType !== "final_asset_approval");
+      const pipelineSearchParams = new URLSearchParams({
+        q: row.candidateId,
+        candidateId: row.candidateId,
+      });
+
+      return (
+        <div className="flex flex-col items-start gap-2">
+          {canDecide ? (
+            <div className="flex gap-2">
+              <button
+                className="rounded-xl bg-emerald-600 px-3 py-2 text-xs font-semibold text-white disabled:cursor-not-allowed disabled:opacity-60"
+                disabled={isPending}
+                onClick={() => handleDecision(row, "approve")}
+                type="button"
+              >
+                Approve
+              </button>
+              <button
+                className="rounded-xl border border-rose-200 px-3 py-2 text-xs font-semibold text-rose-600 disabled:cursor-not-allowed disabled:opacity-60"
+                disabled={isPending}
+                onClick={() => handleDecision(row, "reject")}
+                type="button"
+              >
+                Reject
+              </button>
+            </div>
+          ) : (
+            <p className="text-xs font-medium text-slate-500">Decision recorded</p>
+          )}
+          <div className="flex gap-3 text-xs">
+            {canOpenPipeline ? (
+              <Link
+                className="text-slate-500 hover:text-[var(--color-primary)]"
+                href={`/pipeline?${pipelineSearchParams.toString()}`}
+              >
+                Open Pipeline
+              </Link>
+            ) : null}
+            <a
+              className="text-slate-500 hover:text-[var(--color-primary)]"
+              href={`/api/audit-log?aggregateType=candidate&aggregateId=${row.candidateId}`}
+              rel="noreferrer"
+              target="_blank"
+            >
+              Audit Log
+            </a>
+          </div>
+        </div>
+      );
+    },
+  });
+
+  const tableColumns: ColumnDef<QueueTableRowViewModel, string>[] = [...columns, actionColumn];
+
   return (
     <section className="space-y-6">
-      <div className="grid gap-4 xl:grid-cols-4">
+      <div className="grid gap-4 xl:grid-cols-3">
         {data.summary.map((stat) => (
           <StatCard key={stat.label} label={stat.label} value={stat.value} hint={stat.hint} tone={stat.tone} />
         ))}
@@ -160,8 +230,10 @@ export function QueueDashboardClient({ initialDashboard }: QueueDashboardClientP
           className="rounded-b-none border-x-0 border-t-0 shadow-none"
           left={
             <SearchInput
-              onChange={(event) => setSearchValue(event.target.value)}
-              placeholder="Search songs, artists, or task IDs..."
+              debounceMs={400}
+              onPendingChange={setIsSearchPending}
+              onValueChange={setSearchValue}
+              placeholder="Search candidate title or artist..."
               value={searchValue}
             />
           }
@@ -185,7 +257,7 @@ export function QueueDashboardClient({ initialDashboard }: QueueDashboardClientP
                 );
               })}
               <span className="text-xs font-semibold uppercase tracking-[0.12em] text-slate-400">
-                {error ? "Updates paused" : isRefreshing ? "Refreshing" : "Live updates"}
+                {isSearchPending ? "Typing…" : error ? "Updates paused" : isRefreshing ? "Refreshing" : "Live updates"}
               </span>
             </>
           }
@@ -194,16 +266,26 @@ export function QueueDashboardClient({ initialDashboard }: QueueDashboardClientP
         {error ? (
           <ErrorState
             className="mx-4 mt-4"
-            description="Showing the last successful queue snapshot while background refresh retries continue."
+            description="Showing the last successful review queue snapshot while background refresh retries continue."
             title="Live updates paused"
           />
         ) : null}
 
+        {actionState.error ? (
+          <ErrorState
+            className="mx-4 mt-4"
+            description="If this was a stale-version conflict, refresh the queue and retry with the latest version."
+            title={actionState.error}
+          />
+        ) : null}
+
+        {actionState.message ? <p className="mx-4 mt-4 text-sm text-emerald-700">{actionState.message}</p> : null}
+
         <DataTable
           className="rounded-t-none border-0 shadow-none"
-          columns={columns}
+          columns={tableColumns}
           data={data.rows}
-          getRowId={(row) => row.id}
+          getRowId={(row) => row.reviewId}
           onSortChange={setSort}
           sortBy={query.sortBy}
           sortDirection={query.sortDirection}

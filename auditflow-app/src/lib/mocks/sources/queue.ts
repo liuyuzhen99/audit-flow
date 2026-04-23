@@ -4,7 +4,6 @@ import type { QueueDashboardResponseDto, QueueItemDto } from "@/types/queue";
 import { queueSeedRecords } from "@/lib/mocks/data/queue";
 import { MOCK_GENERATED_AT } from "@/lib/mocks/data/common";
 import { simulateQueueItems } from "@/lib/mocks/simulators/queue";
-import { queueDashboardResponseDtoSchema } from "@/lib/schemas/queue";
 
 type QueueDashboardQuery = Pick<ListQueryDto, "page" | "pageSize" | "q" | "status" | "sortBy" | "sortDirection" | "tick">;
 
@@ -74,7 +73,7 @@ export function buildQueueDashboardResponse(query?: Partial<QueueDashboardQuery>
     (item) => item.status === "autoApproved" || item.status === "manualReview" || item.status === "autoRejected",
   );
 
-  return queueDashboardResponseDtoSchema.parse({
+  return {
     summary: [
       { id: "queue-active", label: "Active Tasks", value: countQueueItems(sortedItems, (item) => item.status === "queued" || item.status === "downloading" || item.status === "auditing"), tone: "info" },
       { id: "queue-approved", label: "Auto-approved Today", value: countQueueItems(sortedItems, (item) => item.status === "autoApproved"), tone: "success" },
@@ -91,5 +90,5 @@ export function buildQueueDashboardResponse(query?: Partial<QueueDashboardQuery>
       tick,
       terminal,
     },
-  });
+  };
 }

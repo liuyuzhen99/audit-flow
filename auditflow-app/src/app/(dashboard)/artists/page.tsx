@@ -29,6 +29,11 @@ function normalizeSearchParams(rawSearchParams: Record<string, string | string[]
 export default async function ArtistsPage({ searchParams }: ArtistsPageProps) {
   const resolvedSearchParams = normalizeSearchParams(searchParams ? await searchParams : undefined);
   const query = readListQuery(resolvedSearchParams);
+  const effectiveQuery = {
+    ...query,
+    sortBy: query.sortBy ?? "candidateCount",
+    sortDirection: query.sortDirection ?? "desc",
+  } as const;
   const requestOrigin = await getRequestOrigin();
   let dashboardResponse;
   let artistsLoadError: string | null = null;
@@ -37,12 +42,12 @@ export default async function ArtistsPage({ searchParams }: ArtistsPageProps) {
     dashboardResponse = await getArtistsDashboard({
       baseUrl: requestOrigin,
       query: {
-        page: query.page,
-        pageSize: query.pageSize,
-        q: query.q,
-        status: query.status,
-        sortBy: query.sortBy,
-        sortDirection: query.sortDirection,
+        page: effectiveQuery.page,
+        pageSize: effectiveQuery.pageSize,
+        q: effectiveQuery.q,
+        status: effectiveQuery.status,
+        sortBy: effectiveQuery.sortBy,
+        sortDirection: effectiveQuery.sortDirection,
       },
     });
   } catch (error) {

@@ -2,8 +2,8 @@ import { describe, expect, it } from "vitest";
 
 import { artistsDashboardResponseDtoSchema, artistDtoSchema } from "@/lib/schemas/artist";
 import { libraryAssetDtoSchema, libraryDashboardResponseDtoSchema } from "@/lib/schemas/library";
-import { pipelineDashboardResponseDtoSchema, pipelineJobDetailDtoSchema } from "@/lib/schemas/pipeline";
-import { queueDashboardResponseDtoSchema, queueItemDtoSchema } from "@/lib/schemas/queue";
+import { pipelineDashboardResponseDtoSchema, pipelineItemDtoSchema } from "@/lib/schemas/pipeline";
+import { queueDashboardResponseDtoSchema, queueItemDtoSchema, reviewDecisionResponseDtoSchema } from "@/lib/schemas/queue";
 import { auditReportDtoSchema, reportDetailResponseDtoSchema } from "@/lib/schemas/report";
 
 describe("artist schema", () => {
@@ -45,6 +45,16 @@ describe("artist schema", () => {
 
   it("parses an artist dashboard response", () => {
     const parsed = artistsDashboardResponseDtoSchema.parse({
+      stats: {
+        totalArtists: 12,
+        visibleArtists: 0,
+        totalCompletedArtists: 8,
+        visibleCompletedArtists: 0,
+        totalFailedArtists: 2,
+        visibleFailedArtists: 0,
+        totalCandidates: 10,
+        visibleCandidates: 0,
+      },
       items: [],
       pagination: {
         page: 1,
@@ -62,28 +72,22 @@ describe("artist schema", () => {
 });
 
 describe("queue schema", () => {
-  it("parses a valid queue item dto", () => {
+  it("parses a valid phase 4 queue item dto", () => {
     const parsed = queueItemDtoSchema.parse({
-      id: "queue-1",
-      title: "Midnight City",
+      reviewId: "review-1",
+      artistId: "artist-1",
       artistName: "M83",
-      coverArtUrl: null,
-      status: "auditing",
-      reportId: null,
-      auditDecision: {
-        status: "pending",
-        confidenceScore: null,
-        ruleSummary: "Scanning content fingerprints",
-      },
-      progress: {
-        percent: 65,
-        label: "Audit score 65%",
-      },
-      submittedAt: "2026-04-09T10:00:00.000Z",
-      updatedAt: "2026-04-09T10:05:00.000Z",
+      candidateId: "candidate-1",
+      candidateTitle: "Midnight City",
+      reviewType: "manual_review",
+      status: "pending",
+      version: 3,
+      queuedAt: "2026-04-09T10:00:00.000Z",
+      publishedAt: "2026-04-09T09:30:00.000Z",
+      sourceUrl: "https://example.com/watch?v=midnight-city",
     });
 
-    expect(parsed.progress.percent).toBe(65);
+    expect(parsed.version).toBe(3);
   });
 
   it("parses a queue dashboard response", () => {
@@ -108,55 +112,56 @@ describe("queue schema", () => {
 
     expect(parsed.polling.tick).toBe(1);
   });
+
+  it("parses a review decision response", () => {
+    const parsed = reviewDecisionResponseDtoSchema.parse({
+      reviewId: "review-1",
+      status: "approved",
+      version: 4,
+      subjectId: "candidate-1",
+      candidateStatus: "accepted",
+      nextReviewId: null,
+      nextReviewType: null,
+      decidedAt: "2026-04-09T10:06:00.000Z",
+    });
+
+    expect(parsed.status).toBe("approved");
+  });
 });
 
 describe("pipeline schema", () => {
-  it("parses a valid pipeline job detail dto", () => {
-    const parsed = pipelineJobDetailDtoSchema.parse({
-      id: "job-1",
-      title: "Midnight City (M83) - Video Generation",
-      sourceTitle: "Midnight City",
+  it("parses a valid phase 4 pipeline item dto", () => {
+    const parsed = pipelineItemDtoSchema.parse({
+      candidateId: "candidate-1",
+      artistId: "artist-1",
       artistName: "M83",
-      status: "running",
-      currentStageId: "stage-2",
-      elapsedSeconds: 300,
-      estimatedRemainingSeconds: 120,
+      candidateTitle: "Midnight City",
+      workflowStatus: "pending_review",
+      currentStage: "manual_review",
       stages: [
-        {
-          id: "stage-1",
-          label: "Audio Transcode",
-          status: "completed",
-          progressPercent: 100,
-        },
+        { stage: "transcript_review", status: "approved" },
+        { stage: "manual_review", status: "pending" },
       ],
-      logs: [
-        {
-          id: "log-1",
-          timestamp: "2026-04-09T10:00:00.000Z",
-          tick: 1,
-          level: "info",
-          message: "Task initialized",
-        },
-      ],
-      deliverables: [
-        {
-          id: "asset-1",
-          label: "Master Audio",
-          status: "ready",
-          description: "Ready for downstream access",
-          assetId: null,
-        },
-      ],
+      translation: {
+        status: "pending",
+        updatedAt: "2026-04-09T10:05:00.000Z",
+      },
+      lastUpdatedAt: "2026-04-09T10:05:00.000Z",
     });
 
-    expect(parsed.deliverables[0]?.status).toBe("ready");
+    expect(parsed.translation.status).toBe("pending");
   });
 
   it("parses a pipeline dashboard response", () => {
     const parsed = pipelineDashboardResponseDtoSchema.parse({
       summary: [],
-      jobs: [],
-      activeJob: null,
+      items: [],
+      pagination: {
+        page: 1,
+        pageSize: 10,
+        total: 0,
+        totalPages: 1,
+      },
       meta: {
         generatedAt: "2026-04-09T10:00:00.000Z",
       },
@@ -172,33 +177,19 @@ describe("pipeline schema", () => {
 });
 
 describe("library schema", () => {
-  it("parses a valid library asset dto", () => {
+  it("parses a valid phase 4 library asset dto", () => {
     const parsed = libraryAssetDtoSchema.parse({
       id: "asset-1",
-      title: "Midnight City (Audited Mix)",
+      artistId: "artist-1",
       artistName: "M83",
-      thumbnailUrl: null,
-      status: "published",
-      resolution: "1080p",
-      durationSeconds: 243,
-      createdAt: "2026-04-09T10:00:00.000Z",
-      metadata: {
-        sourceStatus: "completed",
-      },
-      media: {
-        playbackUrl: null,
-        posterUrl: null,
-        mimeType: null,
-      },
-      linkedReport: null,
-      linkedReportAsset: null,
-      reportRuleHits: [],
-      reportTimeline: [],
-      reportComments: [],
-      versions: [],
+      title: "Midnight City (Accepted)",
+      sourceUrl: "https://example.com/watch?v=midnight-city",
+      approvedAt: "2026-04-09T10:00:00.000Z",
+      approvedBy: "reviewer-1",
+      status: "accepted",
     });
 
-    expect(parsed.durationSeconds).toBe(243);
+    expect(parsed.status).toBe("accepted");
   });
 
   it("parses a library dashboard response", () => {
@@ -260,16 +251,11 @@ describe("report schema", () => {
           transcriptLanguage: "English",
           completedAt: "2026-04-09T10:06:00.000Z",
         },
-        linkedAsset: {
-          assetId: "asset-1",
-          title: "Midnight City (Audited Mix)",
-          artistName: "M83",
-          status: "published",
-        },
+        linkedAsset: null,
         media: {
-          playbackUrl: "https://example.com/media/midnight-city.mp4",
-          posterUrl: "https://example.com/posters/midnight-city.jpg",
-          mimeType: "video/mp4",
+          playbackUrl: null,
+          posterUrl: null,
+          mimeType: null,
         },
         ruleHits: [],
         timeline: [],
@@ -280,6 +266,6 @@ describe("report schema", () => {
       },
     });
 
-    expect(parsed.report.status).toBe("completed");
+    expect(parsed.report.summary.decisionStatus).toBe("approved");
   });
 });

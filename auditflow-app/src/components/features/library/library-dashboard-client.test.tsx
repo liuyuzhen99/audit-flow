@@ -14,50 +14,49 @@ vi.mock("next/navigation", () => ({
 }));
 
 describe("LibraryDashboardClient", () => {
-  beforeEach(async () => {
+  beforeEach(() => {
     mockReplace.mockReset();
     mockNavigation.pathname = "/library";
     mockNavigation.searchParams = new URLSearchParams();
   });
 
-  it("renders summary cards and asset cards", async () => {
+  it("renders summary cards and accepted asset cards", async () => {
     const { LibraryDashboardClient } = await import("@/components/features/library/library-dashboard-client");
 
     render(
       <LibraryDashboardClient
-        summary={[{ label: "Published Assets", value: "2", hint: "Synced", tone: "success" }]}
+        summary={[{ label: "Accepted Assets", value: "1", hint: "Visible in the real library feed", tone: "success" }]}
         cards={[
           {
             id: "asset-1",
-            title: "Midnight City (Audited Mix)",
+            title: "Midnight City (Official Video)",
             artistName: "M83",
-            statusLabel: "Published",
+            statusLabel: "Accepted",
             statusTone: "success",
-            durationLabel: "04:03",
-            resolutionLabel: "1080p",
-            dateLabel: "04/09/2026",
-            gradientClassName: "from-sky-950 via-indigo-700 to-fuchsia-500",
+            approvedAtLabel: "Apr 21, 10:24",
+            approvedByLabel: "frontend-user-1",
+            sourceUrl: "https://example.com/watch?v=1",
           },
         ]}
       />,
     );
 
-    expect(screen.getByText("Published Assets")).toBeInTheDocument();
-    expect(screen.getByText("Midnight City (Audited Mix)")).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Reset Filters" })).toBeInTheDocument();
+    expect(screen.getByText("Accepted Assets")).toBeInTheDocument();
+    expect(screen.getByText("Midnight City (Official Video)")).toBeInTheDocument();
+    expect(screen.getByText(/Library detail pages remain outside this Phase 4 integration pass/i)).toBeInTheDocument();
   });
 
-  it("updates the URL when a status filter is selected", async () => {
+  it("updates the URL when the accepted filter is selected", async () => {
     const { LibraryDashboardClient } = await import("@/components/features/library/library-dashboard-client");
 
     render(<LibraryDashboardClient summary={[]} cards={[]} />);
 
-    screen.getByRole("button", { name: "Published" }).click();
+    screen.getByRole("button", { name: "Accepted" }).click();
 
-    expect(mockReplace).toHaveBeenCalledWith("/library?status=published");
+    expect(mockReplace).toHaveBeenCalledWith("/library?status=accepted");
   });
 
-  it("renders each asset card as a link to the detail route", async () => {
+  it("renders source video link for each accepted asset", async () => {
     const { LibraryDashboardClient } = await import("@/components/features/library/library-dashboard-client");
 
     render(
@@ -66,19 +65,22 @@ describe("LibraryDashboardClient", () => {
         cards={[
           {
             id: "asset-1",
-            title: "Midnight City (Audited Mix)",
+            title: "Midnight City (Official Video)",
             artistName: "M83",
-            statusLabel: "Published",
+            statusLabel: "Accepted",
             statusTone: "success",
-            durationLabel: "04:03",
-            resolutionLabel: "1080p",
-            dateLabel: "04/09/2026",
-            gradientClassName: "from-sky-950 via-indigo-700 to-fuchsia-500",
+            approvedAtLabel: "Apr 21, 10:24",
+            approvedByLabel: "frontend-user-1",
+            sourceUrl: "https://example.com/watch?v=1",
           },
         ]}
       />,
     );
 
-    expect(screen.getByRole("link", { name: /midnight city \(audited mix\)/i })).toHaveAttribute("href", "/library/asset-1");
+    expect(screen.getByRole("link", { name: "Open source video" })).toHaveAttribute(
+      "href",
+      "https://example.com/watch?v=1",
+    );
   });
 });
+
