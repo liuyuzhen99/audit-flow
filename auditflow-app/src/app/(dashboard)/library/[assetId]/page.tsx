@@ -2,6 +2,9 @@ import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
 
 import { LibraryAssetDetailClient } from "@/components/features/library/library-asset-detail-client";
+import { adaptLibraryAssetDetail } from "@/lib/adapters/library";
+import { getLibraryAssetDetail } from "@/lib/api/library";
+import { getRequestOrigin } from "@/lib/server/request-origin";
 
 type LibraryAssetPageProps = {
   params: Promise<{ assetId: string }>;
@@ -9,6 +12,9 @@ type LibraryAssetPageProps = {
 
 export default async function LibraryAssetPage({ params }: LibraryAssetPageProps) {
   const { assetId } = await params;
+  const decodedAssetId = decodeURIComponent(assetId);
+  const requestOrigin = await getRequestOrigin();
+  const detail = adaptLibraryAssetDetail(await getLibraryAssetDetail({ assetId: decodedAssetId, baseUrl: requestOrigin }));
 
   return (
     <section className="space-y-6">
@@ -22,8 +28,7 @@ export default async function LibraryAssetPage({ params }: LibraryAssetPageProps
         </Link>
       </div>
 
-      <LibraryAssetDetailClient assetId={assetId} />
+      <LibraryAssetDetailClient detail={detail} />
     </section>
   );
 }
-

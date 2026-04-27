@@ -36,6 +36,7 @@ describe("LibraryDashboardClient", () => {
             approvedAtLabel: "Apr 21, 10:24",
             approvedByLabel: "frontend-user-1",
             sourceUrl: "https://example.com/watch?v=1",
+            artifactStatusLabel: "Ready",
           },
         ]}
       />,
@@ -43,7 +44,7 @@ describe("LibraryDashboardClient", () => {
 
     expect(screen.getByText("Accepted Assets")).toBeInTheDocument();
     expect(screen.getByText("Midnight City (Official Video)")).toBeInTheDocument();
-    expect(screen.getByText(/Library detail pages remain outside this Phase 4 integration pass/i)).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: /open preview/i })).toHaveAttribute("href", "/library/asset-1");
   });
 
   it("updates the URL when the accepted filter is selected", async () => {
@@ -72,6 +73,7 @@ describe("LibraryDashboardClient", () => {
             approvedAtLabel: "Apr 21, 10:24",
             approvedByLabel: "frontend-user-1",
             sourceUrl: "https://example.com/watch?v=1",
+            artifactStatusLabel: "Ready",
           },
         ]}
       />,
@@ -83,4 +85,3 @@ describe("LibraryDashboardClient", () => {
     );
   });
 });
-

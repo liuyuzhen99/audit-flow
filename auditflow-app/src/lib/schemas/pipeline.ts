@@ -4,6 +4,7 @@ import { dtoIdSchema, isoTimestampSchema, paginationMetaDtoSchema, pollingMetaDt
 
 export const pipelineWorkflowStatusSchema = z.enum(["discovered", "pending_review", "accepted", "rejected"]);
 export const pipelineStageStatusSchema = z.enum(["not_started", "pending", "approved", "rejected"]);
+export const asyncPipelineExecutionStatusSchema = z.enum(["pending", "processing", "completed", "failed", "retry_scheduled", "dlq"]);
 export const translationWorkflowStatusSchema = z.enum(["not_started", "pending", "approved", "rejected"]);
 export const pipelineStageNameSchema = z.enum([
   "transcript_review",
@@ -30,6 +31,17 @@ export const pipelineItemDtoSchema = z.object({
     status: translationWorkflowStatusSchema,
     updatedAt: isoTimestampSchema.optional(),
   }),
+  asyncExecution: z.object({
+    jobId: dtoIdSchema,
+    currentStage: z.string().trim().min(1),
+    status: asyncPipelineExecutionStatusSchema,
+    attempt: z.number().int().nonnegative(),
+    maxAttempts: z.number().int().positive(),
+    nextRetryAt: isoTimestampSchema.nullish(),
+    errorMessage: z.string().nullable().optional(),
+    pauseReason: z.string().nullable().optional(),
+    updatedAt: isoTimestampSchema,
+  }).optional(),
   lastUpdatedAt: isoTimestampSchema,
 });
 
@@ -40,4 +52,3 @@ export const pipelineDashboardResponseDtoSchema = z.object({
   meta: responseMetaDtoSchema,
   polling: pollingMetaDtoSchema,
 });
-

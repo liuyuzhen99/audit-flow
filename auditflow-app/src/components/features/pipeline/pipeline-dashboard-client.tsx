@@ -154,6 +154,9 @@ export function PipelineDashboardClient({
                     <div className="flex flex-wrap gap-2">
                       <StatusBadge label={row.workflowStatusLabel} tone={row.workflowStatusTone} />
                       <StatusBadge label={`Translation: ${row.translationStatusLabel}`} tone={row.translationStatusTone} />
+                      {row.asyncExecutionLabel ? (
+                        <StatusBadge label={`Worker: ${row.asyncExecutionLabel}`} tone={row.asyncExecutionTone} />
+                      ) : null}
                     </div>
                     <button
                       aria-controls={`pipeline-details-${row.candidateId}`}
@@ -198,6 +201,12 @@ export function PipelineDashboardClient({
                         >
                           Open raw audit log
                         </a>
+                      </div>
+                      <div className="rounded-2xl border border-[var(--color-border)] bg-white p-4 lg:col-span-3">
+                        <p className="text-xs uppercase tracking-[0.12em] text-slate-400">Worker Execution</p>
+                        <p className="mt-2 text-sm font-semibold text-slate-900">
+                          {row.asyncExecutionDetail ?? "No async worker execution recorded"}
+                        </p>
                       </div>
                     </div>
 

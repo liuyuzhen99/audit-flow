@@ -56,6 +56,7 @@ export type PipelineDashboardResponseDto = {
 
 export type PipelineWorkflowStatus = "discovered" | "pending_review" | "accepted" | "rejected";
 export type Phase4PipelineStageStatus = "not_started" | "pending" | "approved" | "rejected";
+export type AsyncPipelineExecutionStatus = "pending" | "processing" | "completed" | "failed" | "retry_scheduled" | "dlq";
 export type TranslationWorkflowStatus = "not_started" | "pending" | "approved" | "rejected";
 export type PipelineStageName =
   | "transcript_review"
@@ -80,6 +81,17 @@ export type Phase4PipelineItemDto = {
   translation: {
     status: TranslationWorkflowStatus;
     updatedAt?: string;
+  };
+  asyncExecution?: {
+    jobId: string;
+    currentStage: string;
+    status: AsyncPipelineExecutionStatus;
+    attempt: number;
+    maxAttempts: number;
+    nextRetryAt?: string | null;
+    errorMessage?: string | null;
+    pauseReason?: string | null;
+    updatedAt: string;
   };
   lastUpdatedAt: string;
 };
@@ -109,7 +121,9 @@ export type PipelineRowViewModel = {
   currentStageLabel: string;
   translationStatusLabel: string;
   translationStatusTone: StatusTone;
+  asyncExecutionLabel: string | null;
+  asyncExecutionTone: StatusTone;
+  asyncExecutionDetail: string | null;
   lastUpdatedAtLabel: string;
   stages: PipelineStageViewModel[];
 };
-

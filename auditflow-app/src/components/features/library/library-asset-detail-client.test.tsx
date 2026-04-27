@@ -2,23 +2,64 @@ import { render, screen } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
 
 import { LibraryAssetDetailClient } from "@/components/features/library/library-asset-detail-client";
+import type { LibraryAssetDetailViewModel } from "@/types/library";
+
+const baseDetail: LibraryAssetDetailViewModel = {
+  id: "asset-1",
+  title: "Midnight City",
+  artistName: "M83",
+  sourceUrl: "https://example.com/source",
+  approvedAtLabel: "Apr 09, 10:01 AM",
+  approvedByLabel: "System",
+  artifactStatus: "ready",
+  artifactStatusLabel: "Ready",
+  primaryArtifactLabel: "final_video v1",
+  previewUrl: "/api/artifacts/artifact-1/download",
+  fallbackDownloadUrl: "/api/artifacts/artifact-1/download",
+  artifacts: [
+    {
+      artifactId: "artifact-1",
+      artifactType: "final_video",
+      objectUri: "oss://bucket/pipeline/job/final_video/v1/final.mp4",
+      contentType: "video/mp4",
+      sizeBytes: 2048,
+      checksumSha256: "abc",
+      lifecycleStatus: "ready",
+      version: 1,
+      createdAt: "2026-04-09T10:01:00",
+      expiresAt: null,
+    },
+  ],
+};
 
 describe("LibraryAssetDetailClient", () => {
-  it("renders the phase 4 deferred detail message with the asset id", () => {
-    render(<LibraryAssetDetailClient assetId="asset-1" />);
+  it("renders a playable preview when the final artifact is ready", () => {
+    render(<LibraryAssetDetailClient detail={baseDetail} />);
 
-    expect(screen.getByRole("heading", { name: "Library Detail Deferred" })).toBeInTheDocument();
-    expect(screen.getByText(/asset-1/)).toBeInTheDocument();
-    expect(screen.getByText(/outside this integration pass/i)).toBeInTheDocument();
+    expect(screen.getByText("Midnight City")).toBeInTheDocument();
+    expect(screen.getByText("Ready")).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: /download/i })).toHaveAttribute(
+      "href",
+      "/api/artifacts/artifact-1/download",
+    );
   });
 
-  it("renders links back to the list and audit log", () => {
-    render(<LibraryAssetDetailClient assetId="asset-42" />);
-
-    expect(screen.getByRole("link", { name: /back to library/i })).toHaveAttribute("href", "/library");
-    expect(screen.getByRole("link", { name: /open audit log/i })).toHaveAttribute(
-      "href",
-      "/api/audit-log?aggregateType=candidate&aggregateId=asset-42",
+  it("renders a missing-artifact fallback without a broken player", () => {
+    render(
+      <LibraryAssetDetailClient
+        detail={{
+          ...baseDetail,
+          artifactStatus: "missing",
+          artifactStatusLabel: "Missing",
+          previewUrl: null,
+          fallbackDownloadUrl: null,
+          artifacts: [],
+        }}
+      />,
     );
+
+    expect(screen.getAllByText("Missing")).toHaveLength(2);
+    expect(screen.getByText(/has not been produced/i)).toBeInTheDocument();
+    expect(screen.queryByRole("link", { name: /download/i })).not.toBeInTheDocument();
   });
 });

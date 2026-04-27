@@ -114,6 +114,8 @@ vi.mock("@/lib/api/library", () => ({
         approvedAt: "2026-04-21T10:24:00.000Z",
         approvedBy: "frontend-user-1",
         status: "accepted",
+        artifactStatus: "ready",
+        artifacts: [],
       },
     ],
     meta: { generatedAt: "2026-04-21T10:24:00.000Z" },

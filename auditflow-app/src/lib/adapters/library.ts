@@ -1,5 +1,11 @@
 import type { ModuleSummary } from "@/types/common";
-import type { LibraryAssetCardViewModel, Phase4LibraryDashboardResponseDto } from "@/types/library";
+import type {
+  ArtifactAvailabilityStatus,
+  LibraryAssetCardViewModel,
+  LibraryAssetDetailDto,
+  LibraryAssetDetailViewModel,
+  Phase4LibraryDashboardResponseDto,
+} from "@/types/library";
 
 import { getLibraryStatusPresentation } from "@/lib/status/audit";
 
@@ -28,7 +34,19 @@ function adaptCard(item: Phase4LibraryDashboardResponseDto["items"][number]): Li
     approvedAtLabel: formatApprovedAtLabel(item.approvedAt),
     approvedByLabel: item.approvedBy ?? "System",
     sourceUrl: item.sourceUrl,
+    artifactStatusLabel: formatArtifactStatusLabel(item.artifactStatus),
   };
+}
+
+function formatArtifactStatusLabel(status: ArtifactAvailabilityStatus): string {
+  const labels: Record<ArtifactAvailabilityStatus, string> = {
+    ready: "Ready",
+    missing: "Missing",
+    expired: "Expired",
+    deleted: "Deleted",
+    delete_failed: "Delete failed",
+  };
+  return labels[status];
 }
 
 export function adaptLibraryDashboard(data: Phase4LibraryDashboardResponseDto): {
@@ -38,5 +56,24 @@ export function adaptLibraryDashboard(data: Phase4LibraryDashboardResponseDto): 
   return {
     summary: data.summary,
     cards: data.items.map(adaptCard),
+  };
+}
+
+export function adaptLibraryAssetDetail(data: LibraryAssetDetailDto): LibraryAssetDetailViewModel {
+  return {
+    id: data.id,
+    title: data.title,
+    artistName: data.artistName,
+    sourceUrl: data.sourceUrl,
+    approvedAtLabel: formatApprovedAtLabel(data.approvedAt),
+    approvedByLabel: data.approvedBy ?? "System",
+    artifactStatus: data.artifactStatus,
+    artifactStatusLabel: formatArtifactStatusLabel(data.artifactStatus),
+    primaryArtifactLabel: data.primaryArtifact
+      ? `${data.primaryArtifact.artifactType} v${data.primaryArtifact.version}`
+      : "No final artifact",
+    previewUrl: data.previewUrl,
+    fallbackDownloadUrl: data.fallbackDownloadUrl,
+    artifacts: data.artifacts,
   };
 }

@@ -61,6 +61,30 @@ export type Phase4LibraryAssetDto = {
   approvedAt: string | null;
   approvedBy: string | null;
   status: "accepted";
+  artifactStatus: ArtifactAvailabilityStatus;
+  artifacts: ArtifactSummaryDto[];
+};
+
+export type ArtifactAvailabilityStatus = "ready" | "missing" | "expired" | "deleted" | "delete_failed";
+
+export type ArtifactSummaryDto = {
+  artifactId: string;
+  artifactType: string;
+  objectUri: string;
+  contentType: string | null;
+  sizeBytes: number;
+  checksumSha256: string;
+  lifecycleStatus: string;
+  version: number;
+  createdAt: string;
+  expiresAt: string | null;
+};
+
+export type LibraryAssetDetailDto = Phase4LibraryAssetDto & {
+  primaryArtifact: ArtifactSummaryDto | null;
+  previewUrl: string | null;
+  previewUrlExpiresInSeconds: number | null;
+  fallbackDownloadUrl: string | null;
 };
 
 export type Phase4LibraryDashboardResponseDto = {
@@ -78,6 +102,22 @@ export type LibraryAssetCardViewModel = {
   approvedAtLabel: string;
   approvedByLabel: string;
   sourceUrl: string;
+  artifactStatusLabel: string;
+};
+
+export type LibraryAssetDetailViewModel = {
+  id: string;
+  title: string;
+  artistName: string;
+  sourceUrl: string;
+  approvedAtLabel: string;
+  approvedByLabel: string;
+  artifactStatus: ArtifactAvailabilityStatus;
+  artifactStatusLabel: string;
+  primaryArtifactLabel: string;
+  previewUrl: string | null;
+  fallbackDownloadUrl: string | null;
+  artifacts: ArtifactSummaryDto[];
 };
 
 export type ReportSectionItemTone = Exclude<StatusTone, "neutral">;
@@ -124,4 +164,3 @@ export type ReportCommentsSectionViewModel = {
   emptyDescription: string;
   items: ReportCommentItemViewModel[];
 };
-

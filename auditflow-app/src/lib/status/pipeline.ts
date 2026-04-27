@@ -2,6 +2,7 @@ import type { StatusConfig } from "@/lib/status";
 import type {
   DeliverableStatus,
   Phase4PipelineStageStatus,
+  AsyncPipelineExecutionStatus,
   PipelineRunStatus,
   PipelineStageStatus,
   PipelineWorkflowStatus,
@@ -36,6 +37,15 @@ const phase4PipelineStageStatusPresentationMap: Record<Phase4PipelineStageStatus
   rejected: { label: "Rejected", tone: "danger" },
 };
 
+const asyncPipelineExecutionStatusPresentationMap: Record<AsyncPipelineExecutionStatus, StatusConfig> = {
+  pending: { label: "Queued", tone: "neutral" },
+  processing: { label: "Worker running", tone: "info" },
+  completed: { label: "Stage done", tone: "success" },
+  failed: { label: "Failed", tone: "danger" },
+  retry_scheduled: { label: "Retry scheduled", tone: "warning" },
+  dlq: { label: "DLQ", tone: "danger" },
+};
+
 const deliverableStatusPresentationMap: Record<DeliverableStatus, StatusConfig> = {
   ready: { label: "Ready", tone: "success" },
   processing: { label: "Processing", tone: "info" },
@@ -63,6 +73,10 @@ export function getPipelineStageStatusPresentation(status: PipelineStageStatus):
 
 export function getPhase4PipelineStageStatusPresentation(status: Phase4PipelineStageStatus): StatusConfig {
   return phase4PipelineStageStatusPresentationMap[status];
+}
+
+export function getAsyncPipelineExecutionStatusPresentation(status: AsyncPipelineExecutionStatus): StatusConfig {
+  return asyncPipelineExecutionStatusPresentationMap[status];
 }
 
 export function getDeliverableStatusPresentation(status: DeliverableStatus): StatusConfig {

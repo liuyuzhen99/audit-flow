@@ -1,7 +1,7 @@
 import type { ModuleSummary } from "@/types/common";
 import type { Phase4PipelineDashboardResponseDto, Phase4PipelineItemDto, PipelineRowViewModel, PipelineStageName, PipelineStageViewModel } from "@/types/pipeline";
 
-import { getPhase4PipelineStageStatusPresentation, getPipelineWorkflowStatusPresentation, getTranslationStatusPresentation } from "@/lib/status/pipeline";
+import { getAsyncPipelineExecutionStatusPresentation, getPhase4PipelineStageStatusPresentation, getPipelineWorkflowStatusPresentation, getTranslationStatusPresentation } from "@/lib/status/pipeline";
 
 function formatStageLabel(stage: PipelineStageName | "completed" | "rejected"): string {
   switch (stage) {
@@ -45,6 +45,12 @@ function adaptStage(item: Phase4PipelineItemDto["stages"][number]): PipelineStag
 function adaptRow(item: Phase4PipelineDashboardResponseDto["items"][number]): PipelineRowViewModel {
   const workflowPresentation = getPipelineWorkflowStatusPresentation(item.workflowStatus);
   const translationPresentation = getTranslationStatusPresentation(item.translation.status);
+  const asyncPresentation = item.asyncExecution
+    ? getAsyncPipelineExecutionStatusPresentation(item.asyncExecution.status)
+    : null;
+  const asyncDetail = item.asyncExecution
+    ? `${item.asyncExecution.currentStage} · attempt ${item.asyncExecution.attempt + 1}/${item.asyncExecution.maxAttempts}${item.asyncExecution.pauseReason ? ` · ${item.asyncExecution.pauseReason.replaceAll("_", " ")}` : ""}`
+    : null;
 
   return {
     candidateId: item.candidateId,
@@ -56,6 +62,9 @@ function adaptRow(item: Phase4PipelineDashboardResponseDto["items"][number]): Pi
     currentStageLabel: formatStageLabel(item.currentStage),
     translationStatusLabel: translationPresentation.label,
     translationStatusTone: translationPresentation.tone,
+    asyncExecutionLabel: asyncPresentation?.label ?? null,
+    asyncExecutionTone: asyncPresentation?.tone ?? "neutral",
+    asyncExecutionDetail: asyncDetail,
     lastUpdatedAtLabel: formatUpdatedLabel(item.lastUpdatedAt),
     stages: item.stages.map(adaptStage),
   };

@@ -39,6 +39,9 @@ describe("PipelineDashboardClient", () => {
             currentStageLabel: "Taste Audit",
             translationStatusLabel: "Not started",
             translationStatusTone: "neutral",
+            asyncExecutionLabel: "Stage done",
+            asyncExecutionTone: "success",
+            asyncExecutionDetail: "manual_review · attempt 1/3 · manual review pending",
             lastUpdatedAtLabel: "Apr 21, 10:24",
             stages: [
               { id: "transcript_review", label: "Transcript Review", statusLabel: "Approved", statusTone: "success" },
@@ -72,6 +75,7 @@ describe("PipelineDashboardClient", () => {
     expect(screen.getByText("Midnight City (Official Video)")).toBeInTheDocument();
     expect(screen.getByText(/Pipeline only shows candidates that are still in review/i)).toBeInTheDocument();
     expect(screen.getByText("Refreshing")).toBeInTheDocument();
+    expect(screen.getByText("Worker: Stage done")).toBeInTheDocument();
     expect(screen.getByRole("button", { name: /show details/i })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Next Page" })).toBeInTheDocument();
     expect(screen.queryByText("Current Stage")).not.toBeInTheDocument();
@@ -95,6 +99,8 @@ describe("PipelineDashboardClient", () => {
 
     expect(screen.getAllByText("Taste Audit").length).toBeGreaterThan(0);
     expect(screen.getByText("Current Stage")).toBeInTheDocument();
+    expect(screen.getByText("Worker Execution")).toBeInTheDocument();
+    expect(screen.getByText("manual_review · attempt 1/3 · manual review pending")).toBeInTheDocument();
     expect(screen.getByRole("link", { name: "Open raw audit log" })).toHaveAttribute(
       "href",
       "/api/audit-log?aggregateType=candidate&aggregateId=candidate-1",

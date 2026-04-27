@@ -187,6 +187,8 @@ describe("library schema", () => {
       approvedAt: "2026-04-09T10:00:00.000Z",
       approvedBy: "reviewer-1",
       status: "accepted",
+      artifactStatus: "ready",
+      artifacts: [],
     });
 
     expect(parsed.status).toBe("accepted");

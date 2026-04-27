@@ -13,7 +13,37 @@ type BackendLibraryItem = {
   approved_at: string | null;
   approved_by: string | null;
   curation_status: "accepted";
+  artifact_status?: "ready" | "missing" | "expired" | "deleted" | "delete_failed";
+  artifacts?: BackendArtifactSummary[];
 };
+
+type BackendArtifactSummary = {
+  artifact_id: string;
+  artifact_type: string;
+  object_uri: string;
+  content_type: string | null;
+  size_bytes: number;
+  checksum_sha256: string;
+  lifecycle_status: string;
+  version: number;
+  created_at: string;
+  expires_at: string | null;
+};
+
+function mapBackendArtifact(artifact: BackendArtifactSummary) {
+  return {
+    artifactId: artifact.artifact_id,
+    artifactType: artifact.artifact_type,
+    objectUri: artifact.object_uri,
+    contentType: artifact.content_type,
+    sizeBytes: artifact.size_bytes,
+    checksumSha256: artifact.checksum_sha256,
+    lifecycleStatus: artifact.lifecycle_status,
+    version: artifact.version,
+    createdAt: normalizeBackendTimestamp(artifact.created_at),
+    expiresAt: normalizeBackendTimestamp(artifact.expires_at),
+  };
+}
 
 type BackendLibraryResponse = {
   items: BackendLibraryItem[];
@@ -98,6 +128,8 @@ export async function GET(request: NextRequest) {
         approvedAt: normalizeBackendTimestamp(item.approved_at),
         approvedBy: item.approved_by,
         status: item.curation_status,
+        artifactStatus: item.artifact_status ?? "missing",
+        artifacts: (item.artifacts ?? []).map(mapBackendArtifact),
       })),
       meta: {
         generatedAt: normalizeBackendTimestamp((payload as BackendLibraryResponse).meta.generated_at),

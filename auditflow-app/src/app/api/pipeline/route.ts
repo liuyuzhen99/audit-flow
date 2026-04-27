@@ -19,6 +19,17 @@ type BackendPipelineItem = {
     status: string;
     updated_at?: string;
   };
+  async_execution?: {
+    job_id: string;
+    current_stage: string;
+    status: string;
+    attempt: number;
+    max_attempts: number;
+    next_retry_at?: string | null;
+    error_message?: string | null;
+    pause_reason?: string | null;
+    updated_at: string;
+  };
   last_updated_at: string;
 };
 
@@ -129,6 +140,19 @@ export async function GET(request: NextRequest) {
           status: item.translation.status,
           ...(item.translation.updated_at ? { updatedAt: normalizeBackendTimestamp(item.translation.updated_at) } : {}),
         },
+        ...(item.async_execution ? {
+          asyncExecution: {
+            jobId: item.async_execution.job_id,
+            currentStage: item.async_execution.current_stage,
+            status: item.async_execution.status,
+            attempt: item.async_execution.attempt,
+            maxAttempts: item.async_execution.max_attempts,
+            nextRetryAt: item.async_execution.next_retry_at ? normalizeBackendTimestamp(item.async_execution.next_retry_at) : null,
+            errorMessage: item.async_execution.error_message ?? null,
+            pauseReason: item.async_execution.pause_reason ?? null,
+            updatedAt: normalizeBackendTimestamp(item.async_execution.updated_at),
+          },
+        } : {}),
         lastUpdatedAt: normalizeBackendTimestamp(item.last_updated_at),
       })),
       pagination: {

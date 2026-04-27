@@ -132,6 +132,8 @@ describe("dashboard adapters", () => {
           approvedAt: "2026-04-09T10:06:00.000Z",
           approvedBy: "reviewer-1",
           status: "accepted",
+          artifactStatus: "ready",
+          artifacts: [],
         },
       ],
       meta: { generatedAt: "2026-04-09T10:06:00.000Z" },
