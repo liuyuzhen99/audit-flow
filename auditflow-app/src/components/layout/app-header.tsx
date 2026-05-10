@@ -1,16 +1,28 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { Bell, Cog, Waves } from "lucide-react";
 
 import { SearchInput } from "@/components/shared/search-input";
 import { APP_NAME } from "@/lib/constants";
 import { isActivePath, PRIMARY_NAV_ITEMS } from "@/lib/nav";
+import { createListQuerySearchParams, readListQuery } from "@/lib/query/list-query";
 import { cn } from "@/lib/utils";
 
 export function AppHeader() {
   const pathname = usePathname();
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const activeNavItem = PRIMARY_NAV_ITEMS.find((item) => isActivePath(pathname, item.href));
+  const activeSearchValue = activeNavItem ? readListQuery(new URLSearchParams(searchParams.toString())).q ?? "" : "";
+
+  const handleGlobalSearch = (value: string) => {
+    const targetPath = activeNavItem?.href ?? "/artists";
+    const nextParams = createListQuerySearchParams({ q: value });
+    const queryString = nextParams.toString();
+    router.replace(queryString ? `${targetPath}?${queryString}` : targetPath);
+  };
 
   return (
     <header className="border-b border-[var(--color-border)] bg-white px-6 py-4 lg:px-8">
@@ -53,7 +65,9 @@ export function AppHeader() {
           <SearchInput
             className="min-w-[260px] rounded-xl px-4 py-2"
             inputClassName="text-sm"
+            onValueChange={handleGlobalSearch}
             placeholder="Search..."
+            value={activeSearchValue}
           />
 
           <div className="flex items-center gap-2 self-end sm:self-auto">

@@ -18,6 +18,7 @@ const pipelineRunStatusPresentationMap: Record<PipelineRunStatus, StatusConfig> 
 
 const pipelineWorkflowStatusPresentationMap: Record<PipelineWorkflowStatus, StatusConfig> = {
   discovered: { label: "Discovered", tone: "neutral" },
+  downloading: { label: "Downloading", tone: "info" },
   pending_review: { label: "In Review", tone: "warning" },
   accepted: { label: "Accepted", tone: "success" },
   rejected: { label: "Rejected", tone: "danger" },
@@ -55,6 +56,7 @@ const deliverableStatusPresentationMap: Record<DeliverableStatus, StatusConfig> 
 const translationStatusPresentationMap: Record<TranslationWorkflowStatus, StatusConfig> = {
   not_started: { label: "Not started", tone: "neutral" },
   pending: { label: "Pending", tone: "warning" },
+  submitted: { label: "Submitted", tone: "info" },
   approved: { label: "Approved", tone: "success" },
   rejected: { label: "Rejected", tone: "danger" },
 };

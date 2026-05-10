@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "AuditFlow",
+  title: "TransFlow",
   description: "Enterprise media audit workflow dashboard.",
 };
 

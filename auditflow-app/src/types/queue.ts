@@ -59,7 +59,11 @@ export type Phase4QueueItemDto = {
   candidateTitle: string;
   reviewType: ReviewType;
   status: QueueReviewStatus;
+  statusLabel: string;
   version: number;
+  decidedBy: string | null;
+  decidedAt: string | null;
+  decisionComment: string | null;
   queuedAt: string;
   publishedAt: string | null;
   sourceUrl: string;
@@ -122,4 +126,3 @@ export type QueueTableRowViewModel = {
   queuedAtLabel: string;
   sourceUrl: string;
 };
-

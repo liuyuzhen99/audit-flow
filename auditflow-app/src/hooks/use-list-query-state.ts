@@ -11,6 +11,8 @@ type SortChange = {
   sortDirection?: SortDirection;
 };
 
+type QueryPatch = Partial<ListQueryDto>;
+
 export function useListQueryState() {
   const pathname = usePathname();
   const router = useRouter();
@@ -48,6 +50,13 @@ export function useListQueryState() {
   }, [searchParams]);
 
   const navigate = (nextQuery: ListQueryDto) => {
+    const href = createHref(nextQuery);
+    startTransition(() => {
+      router.replace(href);
+    });
+  };
+
+  const createHref = (nextQuery: ListQueryDto) => {
     const canonicalQuery: ListQueryDto = {
       ...nextQuery,
       pageSize: nextQuery.pageSize ?? DEFAULT_PAGE_SIZE,
@@ -55,9 +64,11 @@ export function useListQueryState() {
     const extraEntries = Array.from(extraFiltersRef.current.entries()) as Array<[string, string]>;
     const nextSearchParams = createListQuerySearchParams(canonicalQuery, { extraEntries });
     const queryString = nextSearchParams.toString();
-    startTransition(() => {
-      router.replace(queryString ? `${pathname}?${queryString}` : pathname);
-    });
+    return queryString ? `${pathname}?${queryString}` : pathname;
+  };
+
+  const createHrefForPatch = (patch: QueryPatch) => {
+    return createHref(applyListQueryPatch(queryRef.current, patch));
   };
 
   const setSearchValue = (value: string) => {
@@ -108,5 +119,6 @@ export function useListQueryState() {
     setStatus,
     setFilter,
     resetFilters,
+    createHrefForPatch,
   };
 }

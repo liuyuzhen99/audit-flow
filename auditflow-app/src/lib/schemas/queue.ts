@@ -21,7 +21,11 @@ export const queueItemDtoSchema = z.object({
   candidateTitle: nonEmptyStringSchema,
   reviewType: reviewTypeSchema,
   status: queueReviewStatusSchema,
+  statusLabel: nonEmptyStringSchema,
   version: z.number().int().positive(),
+  decidedBy: nonEmptyStringSchema.nullable(),
+  decidedAt: isoTimestampSchema.nullable(),
+  decisionComment: z.string().nullable(),
   queuedAt: isoTimestampSchema,
   publishedAt: isoTimestampSchema.nullable(),
   sourceUrl: z.string().url(),
@@ -67,4 +71,3 @@ export const auditLogResponseDtoSchema = z.object({
   pagination: paginationMetaDtoSchema,
   meta: responseMetaDtoSchema,
 });
-

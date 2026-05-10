@@ -10,8 +10,7 @@ const mockNavigation = {
 const mockUsePollingResource = vi.fn();
 const mockApproveReview = vi.fn();
 const mockRejectReview = vi.fn();
-
-vi.stubGlobal("prompt", vi.fn(() => "looks good"));
+const mockGetCandidateWorkflowDetail = vi.fn();
 
 vi.mock("next/navigation", () => ({
   usePathname: () => mockNavigation.pathname,
@@ -32,6 +31,10 @@ vi.mock("@/lib/api/queue", async () => {
   };
 });
 
+vi.mock("@/lib/api/pipeline", () => ({
+  getCandidateWorkflowDetail: (...args: unknown[]) => mockGetCandidateWorkflowDetail(...args),
+}));
+
 describe("QueueDashboardClient", () => {
   beforeEach(() => {
     mockReplace.mockReset();
@@ -40,6 +43,39 @@ describe("QueueDashboardClient", () => {
     mockUsePollingResource.mockReset();
     mockApproveReview.mockReset();
     mockRejectReview.mockReset();
+    mockGetCandidateWorkflowDetail.mockReset();
+    mockGetCandidateWorkflowDetail.mockResolvedValue({
+      candidateId: "candidate-1",
+      artistId: "artist-1",
+      artistName: "M83",
+      candidateTitle: "Midnight City (Official Video)",
+      sourceUrl: "https://example.com/watch?v=1",
+      workflowStatus: "pending_review",
+      currentStage: "transcript_review",
+      reviews: [
+        {
+          reviewId: "review-1",
+          reviewType: "transcript_review",
+          status: "pending",
+          version: 1,
+          decisionComment: null,
+          decidedBy: null,
+          decidedAt: null,
+          createdAt: "2026-04-21T10:24:00.000Z",
+          updatedAt: "2026-04-21T10:24:00.000Z",
+        },
+      ],
+      transcript: {
+        videoId: "video-1",
+        segmentCount: 1,
+        segments: [{ lineIndex: 0, startTime: 0, endTime: 2, text: "Wake up", status: "completed" }],
+      },
+      tasteAudit: null,
+      translation: {
+        lineCount: 0,
+        lines: [{ lineIndex: 0, startTime: 0, endTime: 2, sourceText: "Wake up", translatedText: null, status: "completed" }],
+      },
+    });
     mockUsePollingResource.mockReturnValue({
       data: {
         summary: [{ label: "Pending Reviews", value: "1", hint: "Awaiting human action", tone: "warning" }],
@@ -67,6 +103,27 @@ describe("QueueDashboardClient", () => {
       error: null,
       isRefreshing: false,
     });
+  });
+
+  it("loads transcript, taste and translation details from the queue page", async () => {
+    const { QueueDashboardClient } = await import("@/components/features/queue/queue-dashboard-client");
+
+    render(
+      <QueueDashboardClient
+        initialDashboard={{
+          summary: [],
+          rows: [],
+          pagination: { page: 1, pageSize: 10, total: 1, totalPages: 1 },
+          polling: { intervalMs: 15000, tick: 0, terminal: false },
+        }}
+      />,
+    );
+
+    fireEvent.click(screen.getByRole("button", { name: "View Details" }));
+
+    expect(await screen.findByText("Review Details")).toBeInTheDocument();
+    expect(screen.getAllByText("Wake up").length).toBeGreaterThan(0);
+    expect(mockGetCandidateWorkflowDetail).toHaveBeenCalledWith({ candidateId: "candidate-1" });
   });
 
   it("renders queue summary and review rows", async () => {
@@ -103,9 +160,7 @@ describe("QueueDashboardClient", () => {
       />,
     );
 
-    screen.getByRole("button", { name: "Rejected" }).click();
-
-    expect(mockReplace).toHaveBeenCalledWith("/queue?status=rejected");
+    expect(screen.getByRole("link", { name: "Rejected" })).toHaveAttribute("href", "/queue?status=rejected");
   });
 
   it("submits approve action with expected version and actor id", async () => {
@@ -139,7 +194,7 @@ describe("QueueDashboardClient", () => {
       expect(mockApproveReview).toHaveBeenCalledWith({
         reviewId: "review-1",
         expectedVersion: 1,
-        comment: "looks good",
+        comment: "Frontend approve decision",
         actorId: "frontend-user-1",
       });
     });

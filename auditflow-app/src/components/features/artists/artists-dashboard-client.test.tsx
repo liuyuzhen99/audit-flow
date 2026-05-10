@@ -94,9 +94,7 @@ describe("ArtistsDashboardClient", () => {
       />,
     );
 
-    fireEvent.click(screen.getByRole("button", { name: "Completed" }));
-
-    expect(mockReplace).toHaveBeenCalledWith("/artists?status=completed");
+    expect(screen.getByRole("link", { name: "Completed" })).toHaveAttribute("href", "/artists?status=completed");
   });
 
   it("triggers artist resync", async () => {

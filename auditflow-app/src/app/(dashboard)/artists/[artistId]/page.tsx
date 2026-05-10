@@ -44,7 +44,6 @@ export default async function ArtistCandidatesPage({ params, searchParams }: Art
       query: {
         page: query.page,
         pageSize: query.pageSize,
-        status: query.status,
       },
     });
   } catch (error) {

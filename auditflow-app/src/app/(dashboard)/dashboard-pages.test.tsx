@@ -86,6 +86,7 @@ vi.mock("@/lib/api/pipeline", () => ({
         artistName: "M83",
         candidateTitle: "Midnight City (Official Video)",
         workflowStatus: "pending_review",
+        artifactStatus: "missing",
         currentStage: "taste_audit",
         stages: [
           { stage: "transcript_review", status: "approved" },
@@ -164,6 +165,7 @@ describe("dashboard pages", () => {
     render(await QueuePage({}));
 
     expect(screen.getByRole("heading", { name: "Audit Queue" })).toBeInTheDocument();
+    expect(screen.queryByText("Phase 9 Cutover")).not.toBeInTheDocument();
     expect(screen.getByText("Midnight City (Official Video)")).toBeInTheDocument();
   });
 
@@ -171,6 +173,7 @@ describe("dashboard pages", () => {
     render(await PipelinePage({}));
 
     expect(screen.getByRole("heading", { name: "Pipeline" })).toBeInTheDocument();
+    expect(screen.queryByText("Phase 9 Cutover")).not.toBeInTheDocument();
     expect(screen.getByText("Midnight City (Official Video)")).toBeInTheDocument();
     expect(screen.getByRole("button", { name: /show details/i })).toBeInTheDocument();
   });

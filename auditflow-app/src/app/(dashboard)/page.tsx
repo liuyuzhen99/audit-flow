@@ -10,7 +10,7 @@ export default function DashboardIndexPage() {
           Dashboard Foundation
         </p>
         <h1 className="mt-3 text-4xl font-semibold tracking-tight text-slate-950">
-          AuditFlow workspace is ready.
+          TransFlow workspace is ready.
         </h1>
         <p className="mt-3 max-w-3xl text-lg text-slate-500">
           Phase 1 establishes the shared shell, design tokens, navigation, and

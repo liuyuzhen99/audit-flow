@@ -25,7 +25,7 @@ const statusOptions = [
 ] as const;
 
 export function LibraryDashboardClient({ summary, cards }: LibraryDashboardClientProps) {
-  const { query, searchValue, resetFilters, setSearchValue, setStatus } = useListQueryState();
+  const { createHrefForPatch, query, searchValue, resetFilters, setSearchValue } = useListQueryState();
 
   return (
     <section className="space-y-6">
@@ -49,17 +49,16 @@ export function LibraryDashboardClient({ summary, cards }: LibraryDashboardClien
               const isActive = (query.status ?? undefined) === option.value;
 
               return (
-                <button
+                <Link
                   className={isActive
                     ? "rounded-2xl bg-[rgba(99,102,241,0.12)] px-4 py-3 text-sm font-semibold text-[var(--color-primary)]"
                     : "rounded-2xl border border-[var(--color-border)] px-4 py-3 text-sm font-semibold text-slate-700"
                   }
+                  href={createHrefForPatch({ status: option.value })}
                   key={option.label}
-                  onClick={() => setStatus(option.value)}
-                  type="button"
                 >
                   {option.label}
-                </button>
+                </Link>
               );
             })}
             <button className="text-sm font-semibold text-[var(--color-primary)]" onClick={resetFilters} type="button">
@@ -99,12 +98,21 @@ export function LibraryDashboardClient({ summary, cards }: LibraryDashboardClien
               </div>
 
               <div className="flex flex-wrap gap-2">
-                <Link
-                  className="inline-flex items-center rounded-2xl bg-[var(--color-primary)] px-4 py-3 text-sm font-semibold text-white"
-                  href={`/library/${asset.id}`}
-                >
-                  Open preview
-                </Link>
+                {asset.artifactStatusLabel === "Ready" ? (
+                  <Link
+                    className="inline-flex items-center rounded-2xl bg-[var(--color-primary)] px-4 py-3 text-sm font-semibold text-white"
+                    href={`/library/${asset.id}`}
+                  >
+                    Open preview
+                  </Link>
+                ) : (
+                  <Link
+                    className="inline-flex items-center rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm font-semibold text-amber-800"
+                    href={`/library/${asset.id}`}
+                  >
+                    View missing artifact
+                  </Link>
+                )}
                 <a
                   className="inline-flex items-center rounded-2xl border border-[var(--color-border)] px-4 py-3 text-sm font-semibold text-slate-700 hover:bg-slate-50"
                   href={asset.sourceUrl}

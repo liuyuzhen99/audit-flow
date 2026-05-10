@@ -1,6 +1,8 @@
 "use client";
 
+import { useState, useTransition } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { createColumnHelper, type ColumnDef } from "@tanstack/react-table";
 
 import { DataTable } from "@/components/shared/data-table";
@@ -9,17 +11,10 @@ import { PageToolbar } from "@/components/shared/page-toolbar";
 import { QueryPagination } from "@/components/shared/query-pagination";
 import { StatusBadge } from "@/components/shared/status-badge";
 import { useListQueryState } from "@/hooks/use-list-query-state";
+import { addCandidateToPipeline } from "@/lib/api/pipeline";
 import type { ArtistCandidatesResponseDto, ArtistLatestCandidateDto } from "@/types/artist";
 
 const columnHelper = createColumnHelper<ArtistLatestCandidateDto>();
-
-const statusOptions = [
-  { label: "All", value: undefined },
-  { label: "Discovered", value: "discovered" },
-  { label: "Pending Review", value: "pending_review" },
-  { label: "Accepted", value: "accepted" },
-  { label: "Rejected", value: "rejected" },
-] as const;
 
 const columns = [
   columnHelper.accessor("title", {
@@ -30,10 +25,6 @@ const columns = [
         <p className="mt-1 text-sm text-slate-500">{info.row.original.videoId}</p>
       </div>
     ),
-  }),
-  columnHelper.accessor("status", {
-    header: "Review Status",
-    cell: (info) => <StatusBadge label={info.getValue().replaceAll("_", " ")} tone="info" />,
   }),
   columnHelper.accessor("ingestionStatus", {
     header: "Ingestion",
@@ -49,17 +40,8 @@ const columns = [
   }),
   columnHelper.display({
     id: "link",
-    header: "Open",
-    cell: (info) => (
-      <Link
-        className="text-sm font-semibold text-[var(--color-primary)] hover:underline"
-        href={info.row.original.sourceUrl}
-        rel="noreferrer"
-        target="_blank"
-      >
-        Watch source
-      </Link>
-    ),
+    header: "Actions",
+    cell: (info) => <CandidateActions candidate={info.row.original} />,
   }),
 ] as ColumnDef<ArtistLatestCandidateDto, unknown>[];
 
@@ -70,7 +52,7 @@ type ArtistCandidatesClientProps = {
 };
 
 export function ArtistCandidatesClient({ artistId, artistName, response }: ArtistCandidatesClientProps) {
-  const { query, setPage, setPageSize, setStatus } = useListQueryState();
+  const { setPage, setPageSize } = useListQueryState();
 
   return (
     <section className="space-y-6">
@@ -83,27 +65,6 @@ export function ArtistCandidatesClient({ artistId, artistName, response }: Artis
               Review the latest candidate videos discovered for this artist.
             </p>
           </div>
-        }
-        right={
-          <>
-            {statusOptions.map((option) => {
-              const isActive = (query.status ?? undefined) === option.value;
-
-              return (
-                <button
-                  className={isActive
-                    ? "rounded-2xl bg-[rgba(99,102,241,0.12)] px-4 py-3 text-sm font-semibold text-[var(--color-primary)]"
-                    : "rounded-2xl border border-[var(--color-border)] px-4 py-3 text-sm font-semibold text-slate-700"
-                  }
-                  key={option.label}
-                  onClick={() => setStatus(option.value)}
-                  type="button"
-                >
-                  {option.label}
-                </button>
-              );
-            })}
-          </>
         }
       />
 
@@ -128,6 +89,79 @@ export function ArtistCandidatesClient({ artistId, artistName, response }: Artis
         totalPages={response.pagination.totalPages}
       />
     </section>
+  );
+}
+
+function CandidateActions({ candidate }: { candidate: ArtistLatestCandidateDto }) {
+  const router = useRouter();
+  const [isPending, startTransition] = useTransition();
+  const [isAdding, setIsAdding] = useState(false);
+  const [message, setMessage] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [wasAdded, setWasAdded] = useState(false);
+  const pipelineSearchParams = new URLSearchParams({
+    q: candidate.candidateId,
+    candidateId: candidate.candidateId,
+  });
+  const isInPipeline = wasAdded || candidate.status === "pending_review";
+
+  const handleAddToPipeline = async () => {
+    setMessage(null);
+    setError(null);
+    setIsAdding(true);
+    try {
+      const result = await addCandidateToPipeline({ candidateId: candidate.candidateId });
+      setWasAdded(true);
+      setMessage(`Queued for ${result.reviewType.replaceAll("_", " ")}`);
+      startTransition(() => {
+        router.push(`/pipeline?${pipelineSearchParams.toString()}`);
+      });
+    } catch (addError) {
+      setError(addError instanceof Error ? addError.message : "Failed to add candidate to pipeline.");
+    } finally {
+      setIsAdding(false);
+    }
+  };
+
+  return (
+    <div className="flex min-w-[9rem] flex-col items-start gap-2 text-sm">
+      <Link
+        className="font-semibold text-slate-500 hover:text-[var(--color-primary)]"
+        href={candidate.sourceUrl}
+        rel="noreferrer"
+        target="_blank"
+      >
+        Watch source
+      </Link>
+      {candidate.status === "accepted" ? (
+        <Link
+          className="font-semibold text-[var(--color-primary)] hover:underline"
+          href={`/library/${encodeURIComponent(candidate.candidateId)}`}
+        >
+          Open Library
+        </Link>
+      ) : isInPipeline ? (
+        <Link
+          className="font-semibold text-[var(--color-primary)] hover:underline"
+          href={`/pipeline?${pipelineSearchParams.toString()}`}
+        >
+          Open Pipeline
+        </Link>
+      ) : (
+        <button
+          className="rounded-xl bg-[var(--color-primary)] px-3 py-2 text-xs font-semibold text-white disabled:cursor-not-allowed disabled:opacity-60"
+          disabled={isAdding || isPending}
+          onClick={() => {
+            void handleAddToPipeline();
+          }}
+          type="button"
+        >
+          {isAdding || isPending ? "Adding..." : "Add to Pipeline"}
+        </button>
+      )}
+      {message ? <p className="text-xs font-medium text-emerald-700">{message}</p> : null}
+      {error ? <p className="text-xs font-medium text-rose-700">{error}</p> : null}
+    </div>
   );
 }
 

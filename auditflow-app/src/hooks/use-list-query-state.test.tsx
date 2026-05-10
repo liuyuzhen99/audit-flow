@@ -56,6 +56,14 @@ describe("useListQueryState", () => {
     );
   });
 
+  it("creates canonical hrefs for list filter links", () => {
+    const { result } = renderHook(() => useListQueryState());
+
+    expect(result.current.createHrefForPatch({ status: "completed" })).toBe(
+      "/artists?pageSize=20&q=midnight&status=completed&sortBy=updatedAt&sortDirection=desc",
+    );
+  });
+
   it("clears optional filters back to the canonical URL", () => {
     const { result } = renderHook(() => useListQueryState());
 

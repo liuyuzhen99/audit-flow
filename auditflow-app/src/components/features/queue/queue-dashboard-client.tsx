@@ -1,11 +1,12 @@
 "use client";
 
-import { useState } from "react";
+import { useState, type ReactNode } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { createColumnHelper, type ColumnDef } from "@tanstack/react-table";
 
 import { approveReview, getQueueDashboard, rejectReview } from "@/lib/api/queue";
+import { getCandidateWorkflowDetail } from "@/lib/api/pipeline";
 import { adaptQueueDashboard } from "@/lib/adapters/queue";
 import { DataTable } from "@/components/shared/data-table";
 import { ErrorState } from "@/components/shared/error-state";
@@ -16,6 +17,7 @@ import { StatCard } from "@/components/shared/stat-card";
 import { StatusBadge } from "@/components/shared/status-badge";
 import { useListQueryState } from "@/hooks/use-list-query-state";
 import { usePollingResource } from "@/hooks/use-polling-resource";
+import type { CandidateWorkflowDetailDto } from "@/types/pipeline";
 import type { QueueTableRowViewModel } from "@/types/queue";
 
 const columnHelper = createColumnHelper<QueueTableRowViewModel>();
@@ -77,7 +79,7 @@ const statusOptions = [
 
 export function QueueDashboardClient({ initialDashboard }: QueueDashboardClientProps) {
   const router = useRouter();
-  const { query, searchValue, setPage, setPageSize, setSearchValue, setSort, setStatus } = useListQueryState();
+  const { createHrefForPatch, query, searchValue, setPage, setPageSize, setSearchValue, setSort } = useListQueryState();
   const [isSearchPending, setIsSearchPending] = useState(false);
   const [actionState, setActionState] = useState<{
     reviewId: string | null;
@@ -85,6 +87,12 @@ export function QueueDashboardClient({ initialDashboard }: QueueDashboardClientP
     message: string | null;
     error: string | null;
   }>({ reviewId: null, kind: null, message: null, error: null });
+  const [detailState, setDetailState] = useState<{
+    candidateId: string | null;
+    data: CandidateWorkflowDetailDto | null;
+    loading: boolean;
+    error: string | null;
+  }>({ candidateId: null, data: null, loading: false, error: null });
 
   const { data, error, isRefreshing } = usePollingResource({
     initialData: initialDashboard,
@@ -107,10 +115,7 @@ export function QueueDashboardClient({ initialDashboard }: QueueDashboardClientP
   });
 
   const handleDecision = async (row: QueueTableRowViewModel, kind: "approve" | "reject") => {
-    const comment = window.prompt(
-      kind === "approve" ? "Optional approval comment" : "Optional rejection comment",
-      "",
-    );
+    const comment = `Frontend ${kind} decision`;
 
     setActionState({ reviewId: row.reviewId, kind, message: null, error: null });
 
@@ -120,13 +125,13 @@ export function QueueDashboardClient({ initialDashboard }: QueueDashboardClientP
           ? await approveReview({
               reviewId: row.reviewId,
               expectedVersion: row.version,
-              comment: comment || undefined,
+              comment,
               actorId: "frontend-user-1",
             })
           : await rejectReview({
               reviewId: row.reviewId,
               expectedVersion: row.version,
-              comment: comment || undefined,
+              comment,
               actorId: "frontend-user-1",
             });
 
@@ -155,12 +160,31 @@ export function QueueDashboardClient({ initialDashboard }: QueueDashboardClientP
     }
   };
 
+  const handleViewDetails = async (row: QueueTableRowViewModel) => {
+    setDetailState({ candidateId: row.candidateId, data: null, loading: true, error: null });
+    try {
+      const detail = await getCandidateWorkflowDetail({ candidateId: row.candidateId });
+      setDetailState({ candidateId: row.candidateId, data: detail, loading: false, error: null });
+    } catch (detailError) {
+      setDetailState({
+        candidateId: row.candidateId,
+        data: null,
+        loading: false,
+        error: detailError instanceof Error ? detailError.message : "Failed to load review details.",
+      });
+    }
+  };
+
   const actionColumn: ColumnDef<QueueTableRowViewModel, string> = columnHelper.display({
     id: "actions",
     header: "Actions",
     cell: (info) => {
       const row = info.row.original;
-      const isPending = actionState.reviewId === row.reviewId && actionState.kind !== null;
+      const isPending =
+        actionState.reviewId === row.reviewId &&
+        actionState.kind !== null &&
+        actionState.error === null &&
+        actionState.message === null;
       const canDecide = row.status === "pending";
       const canOpenPipeline = row.status === "pending" || (row.status === "approved" && row.reviewType !== "final_asset_approval");
       const pipelineSearchParams = new URLSearchParams({
@@ -209,6 +233,15 @@ export function QueueDashboardClient({ initialDashboard }: QueueDashboardClientP
             >
               Audit Log
             </a>
+            <button
+              className="text-slate-500 hover:text-[var(--color-primary)]"
+              onClick={() => {
+                void handleViewDetails(row);
+              }}
+              type="button"
+            >
+              View Details
+            </button>
           </div>
         </div>
       );
@@ -243,17 +276,16 @@ export function QueueDashboardClient({ initialDashboard }: QueueDashboardClientP
                 const isActive = (query.status ?? undefined) === option.value;
 
                 return (
-                  <button
+                  <Link
                     className={isActive
                       ? "rounded-2xl bg-[rgba(99,102,241,0.12)] px-4 py-3 text-sm font-semibold text-[var(--color-primary)]"
                       : "rounded-2xl px-4 py-3 text-sm font-semibold text-slate-700"
                     }
+                    href={createHrefForPatch({ status: option.value })}
                     key={option.label}
-                    onClick={() => setStatus(option.value)}
-                    type="button"
                   >
                     {option.label}
-                  </button>
+                  </Link>
                 );
               })}
               <span className="text-xs font-semibold uppercase tracking-[0.12em] text-slate-400">
@@ -281,6 +313,8 @@ export function QueueDashboardClient({ initialDashboard }: QueueDashboardClientP
 
         {actionState.message ? <p className="mx-4 mt-4 text-sm text-emerald-700">{actionState.message}</p> : null}
 
+        <QueueReviewDetails state={detailState} />
+
         <DataTable
           className="rounded-t-none border-0 shadow-none"
           columns={tableColumns}
@@ -304,4 +338,100 @@ export function QueueDashboardClient({ initialDashboard }: QueueDashboardClientP
       </section>
     </section>
   );
+}
+
+function QueueReviewDetails({ state }: {
+  state: {
+    candidateId: string | null;
+    data: CandidateWorkflowDetailDto | null;
+    loading: boolean;
+    error: string | null;
+  };
+}) {
+  if (!state.candidateId) {
+    return null;
+  }
+  if (state.loading) {
+    return <div className="mx-4 mt-4 rounded-2xl border border-dashed border-[var(--color-border)] bg-slate-50 p-4 text-sm text-slate-500">Loading review details...</div>;
+  }
+  if (state.error) {
+    return <ErrorState className="mx-4 mt-4" description="The queue row remains available while the detail request can be retried." title={state.error} />;
+  }
+  if (!state.data) {
+    return null;
+  }
+
+  const transcriptReview = state.data.reviews.find((review) => review.reviewType === "transcript_review");
+  const tasteReview = state.data.reviews.find((review) => review.reviewType === "taste_audit");
+  const translationReview = state.data.reviews.find((review) => review.reviewType === "translation_review");
+
+  return (
+    <section className="mx-4 mt-4 rounded-2xl border border-[var(--color-border)] bg-slate-50 p-4">
+      <div className="flex flex-col gap-1 md:flex-row md:items-end md:justify-between">
+        <div>
+          <p className="text-xs uppercase tracking-[0.12em] text-slate-400">Review Details</p>
+          <h2 className="mt-1 text-lg font-semibold text-slate-900">{state.data.candidateTitle}</h2>
+        </div>
+        <p className="text-sm text-slate-500">{state.data.artistName}</p>
+      </div>
+      <div className="mt-4 grid gap-4 xl:grid-cols-3">
+        <ReviewDetailCard emptyText="No transcript segments have been submitted." reviewStatus={transcriptReview?.status ?? "not_started"} title="Transcript Review">
+          {state.data.transcript.segments.map((segment) => (
+            <div key={segment.lineIndex} className="rounded-xl bg-white p-3">
+              <p className="text-xs font-semibold text-slate-400">{formatSeconds(segment.startTime)} - {formatSeconds(segment.endTime)}</p>
+              <p className="mt-1 text-sm text-slate-800">{segment.text}</p>
+            </div>
+          ))}
+        </ReviewDetailCard>
+        <ReviewDetailCard emptyText="No taste audit payload has been recorded." reviewStatus={tasteReview?.status ?? "not_started"} title="Taste Audit">
+          {state.data.tasteAudit ? (
+            <div className="space-y-2 rounded-xl bg-white p-3 text-sm text-slate-700">
+              <p><span className="font-semibold text-slate-900">Decision:</span> {state.data.tasteAudit.decision ?? "Recorded"}</p>
+              <p><span className="font-semibold text-slate-900">Score:</span> {state.data.tasteAudit.score ?? "Not scored"}</p>
+              <p><span className="font-semibold text-slate-900">Comment:</span> {state.data.tasteAudit.comment ?? "No comment"}</p>
+            </div>
+          ) : null}
+        </ReviewDetailCard>
+        <ReviewDetailCard emptyText="No translation lines have been submitted." reviewStatus={translationReview?.status ?? "not_started"} title="Translation Review">
+          {state.data.translation.lines.map((line) => (
+            <div key={line.lineIndex} className="rounded-xl bg-white p-3">
+              <p className="text-xs font-semibold text-slate-400">{formatSeconds(line.startTime)} - {formatSeconds(line.endTime)}</p>
+              <p className="mt-1 text-sm text-slate-600">{line.sourceText}</p>
+              <p className="mt-2 text-sm font-medium text-slate-900">{line.translatedText?.trim() ? line.translatedText : "No translation submitted"}</p>
+            </div>
+          ))}
+        </ReviewDetailCard>
+      </div>
+    </section>
+  );
+}
+
+function ReviewDetailCard({
+  children,
+  emptyText,
+  reviewStatus,
+  title,
+}: {
+  children: ReactNode;
+  emptyText: string;
+  reviewStatus: string;
+  title: string;
+}) {
+  const hasContent = Array.isArray(children) ? children.length > 0 : Boolean(children);
+
+  return (
+    <section className="rounded-2xl border border-[var(--color-border)] bg-slate-100 p-4">
+      <div className="flex items-center justify-between gap-3">
+        <p className="text-sm font-semibold text-slate-900">{title}</p>
+        <StatusBadge label={reviewStatus.replaceAll("_", " ")} tone={reviewStatus === "approved" ? "success" : reviewStatus === "rejected" ? "danger" : reviewStatus === "pending" ? "warning" : "neutral"} />
+      </div>
+      <div className="mt-3 max-h-64 space-y-3 overflow-auto pr-1">
+        {hasContent ? children : <p className="text-sm text-slate-500">{emptyText}</p>}
+      </div>
+    </section>
+  );
+}
+
+function formatSeconds(value: number) {
+  return `${value.toFixed(1)}s`;
 }

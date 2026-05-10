@@ -29,7 +29,7 @@ function adaptQueueRow(item: Phase4QueueDashboardResponseDto["items"][number]): 
     reviewType: item.reviewType,
     reviewTypeLabel: formatReviewTypeLabel(item.reviewType),
     status: item.status,
-    statusLabel: statusPresentation.label,
+    statusLabel: item.statusLabel,
     statusTone: statusPresentation.tone,
     version: item.version,
     versionLabel: `v${item.version}`,

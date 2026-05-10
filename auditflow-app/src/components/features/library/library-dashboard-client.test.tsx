@@ -52,9 +52,33 @@ describe("LibraryDashboardClient", () => {
 
     render(<LibraryDashboardClient summary={[]} cards={[]} />);
 
-    screen.getByRole("button", { name: "Accepted" }).click();
+    expect(screen.getByRole("link", { name: "Accepted" })).toHaveAttribute("href", "/library?status=accepted");
+  });
 
-    expect(mockReplace).toHaveBeenCalledWith("/library?status=accepted");
+  it("labels missing artifact assets as details instead of preview", async () => {
+    const { LibraryDashboardClient } = await import("@/components/features/library/library-dashboard-client");
+
+    render(
+      <LibraryDashboardClient
+        summary={[]}
+        cards={[
+          {
+            id: "asset-1",
+            title: "Midnight City (Official Video)",
+            artistName: "M83",
+            statusLabel: "Accepted",
+            statusTone: "success",
+            approvedAtLabel: "Apr 21, 10:24",
+            approvedByLabel: "frontend-user-1",
+            sourceUrl: "https://example.com/watch?v=1",
+            artifactStatusLabel: "Missing",
+          },
+        ]}
+      />,
+    );
+
+    expect(screen.getByRole("link", { name: "View missing artifact" })).toHaveAttribute("href", "/library/asset-1");
+    expect(screen.queryByRole("link", { name: /open preview/i })).not.toBeInTheDocument();
   });
 
   it("renders source video link for each accepted asset", async () => {

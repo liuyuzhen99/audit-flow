@@ -61,28 +61,12 @@ export default async function PipelinePage({ searchParams }: PipelinePageProps) 
 
   return (
     <section className="space-y-6">
-      <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+      <div>
         <div>
           <h1 className="text-5xl font-semibold tracking-tight text-slate-950">Pipeline</h1>
           <p className="mt-3 text-lg text-slate-500">
             Monitor only in-review Phase 4 candidates and focus on the current workflow stage for a single song.
           </p>
-        </div>
-        <div className="flex gap-3">
-          <button
-            className="rounded-2xl border border-[var(--color-border)] px-5 py-3 text-sm font-semibold text-slate-400 cursor-not-allowed"
-            disabled
-            title="Keep each smoke test constrained to one candidate"
-          >
-            One Candidate Per Run
-          </button>
-          <button
-            className="rounded-2xl bg-slate-200 px-5 py-3 text-sm font-semibold text-slate-400 cursor-not-allowed"
-            disabled
-            title="Console-style pipeline controls are not backed by the current Phase 4 API"
-          >
-            Console Controls Deferred
-          </button>
         </div>
       </div>
 

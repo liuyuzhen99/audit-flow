@@ -33,7 +33,7 @@ type ArtistsDashboardClientProps = {
 
 export function ArtistsDashboardClient({ rows, pagination }: ArtistsDashboardClientProps) {
   const router = useRouter();
-  const { query, searchValue, setPage, setPageSize, setSearchValue, setSort, setStatus } = useListQueryState();
+  const { createHrefForPatch, query, searchValue, setPage, setPageSize, setSearchValue, setSort } = useListQueryState();
   const [resyncError, setResyncError] = useState<string | null>(null);
   const [pendingArtistId, setPendingArtistId] = useState<string | null>(null);
   const [hiddenArtistIds, setHiddenArtistIds] = useState<Set<string>>(new Set());
@@ -167,17 +167,16 @@ export function ArtistsDashboardClient({ rows, pagination }: ArtistsDashboardCli
               const isActive = (query.status ?? undefined) === option.value;
 
               return (
-                <button
+                <Link
                   className={isActive
                     ? "rounded-2xl bg-[rgba(99,102,241,0.12)] px-4 py-3 text-sm font-semibold text-[var(--color-primary)]"
                     : "rounded-2xl border border-[var(--color-border)] px-4 py-3 text-sm font-semibold text-slate-700"
                   }
+                  href={createHrefForPatch({ status: option.value })}
                   key={option.label}
-                  onClick={() => setStatus(option.value)}
-                  type="button"
                 >
                   {option.label}
-                </button>
+                </Link>
               );
             })}
           </>

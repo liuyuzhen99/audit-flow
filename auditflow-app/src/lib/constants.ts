@@ -1,6 +1,6 @@
 import type { SidebarSection } from "@/types/common";
 
-export const APP_NAME = "AuditFlow";
+export const APP_NAME = "TransFlow";
 
 export const SIDEBAR_SECTIONS: SidebarSection[] = [
   {

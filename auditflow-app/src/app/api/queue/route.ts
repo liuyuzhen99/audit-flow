@@ -13,6 +13,9 @@ type BackendQueueItem = {
   review_type: string;
   status: string;
   version: number;
+  decided_by?: string | null;
+  decided_at?: string | null;
+  decision_comment?: string | null;
   queued_at: string;
   published_at: string | null;
   source_url: string;
@@ -52,7 +55,11 @@ type MappedQueueItem = {
   candidateTitle: string;
   reviewType: string;
   status: string;
+  statusLabel: string;
   version: number;
+  decidedBy: string | null;
+  decidedAt: unknown;
+  decisionComment: string | null;
   queuedAt: unknown;
   publishedAt: unknown;
   sourceUrl: string;
@@ -88,17 +95,33 @@ function selectQueueItems(items: MappedQueueItem[], requestedStatus?: string) {
           ? latestApprovedItem
           : requestedStatus === "rejected"
             ? latestRejectedItem
-            : pendingItem ?? latestRejectedItem ?? latestApprovedItem;
+            : pendingItem;
 
     return selectedItem ? [selectedItem] : [];
   });
 }
 
-function sortItems(items: MappedQueueItem[], sortBy?: string, sortDirection?: "asc" | "desc") {
+function sortItems(
+  items: MappedQueueItem[],
+  sortBy?: string,
+  sortDirection?: "asc" | "desc",
+  prioritizePending = false,
+) {
   const direction = sortDirection === "asc" ? 1 : -1;
   const sorted = [...items];
 
   sorted.sort((left, right) => {
+    if (prioritizePending) {
+      const leftPriority = left.status === "pending" ? 0 : 1;
+      const rightPriority = right.status === "pending" ? 0 : 1;
+
+      if (leftPriority !== rightPriority) {
+        return leftPriority - rightPriority;
+      }
+
+      return String(right.queuedAt).localeCompare(String(left.queuedAt));
+    }
+
     const leftValue =
       sortBy === "artistName"
         ? left.artistName
@@ -130,6 +153,19 @@ function sortItems(items: MappedQueueItem[], sortBy?: string, sortDirection?: "a
   return sorted;
 }
 
+function getQueueStatusLabel(item: {
+  status: string;
+  decidedBy: string | null;
+}) {
+  if (item.status === "pending") {
+    return "Pending";
+  }
+
+  const actor = item.decidedBy?.toLowerCase() ?? "";
+  const actorLabel = actor.startsWith("ai-") ? "AI" : "Manual";
+  return `${actorLabel} ${item.status === "approved" ? "Approved" : "Rejected"}`;
+}
+
 export async function GET(request: NextRequest) {
   const query = parseListQueryParams(request.nextUrl.searchParams);
   const backendUrl = new URL(`${getBackendBaseUrl()}/v1/audit-queue`);
@@ -158,7 +194,14 @@ export async function GET(request: NextRequest) {
       candidateTitle: item.candidate_title,
       reviewType: item.review_type,
       status: item.status,
+      statusLabel: getQueueStatusLabel({
+        status: item.status,
+        decidedBy: item.decided_by ?? null,
+      }),
       version: item.version,
+      decidedBy: item.decided_by ?? null,
+      decidedAt: normalizeBackendTimestamp(item.decided_at ?? null),
+      decisionComment: item.decision_comment ?? null,
       queuedAt: normalizeBackendTimestamp(item.queued_at),
       publishedAt: normalizeBackendTimestamp(item.published_at),
       sourceUrl: item.source_url,
@@ -168,11 +211,12 @@ export async function GET(request: NextRequest) {
     const filteredItems = selectedItems.filter((item) => {
       const matchesQuery =
         !query.q ||
+        item.candidateId.toLowerCase().includes(query.q.toLowerCase()) ||
         item.candidateTitle.toLowerCase().includes(query.q.toLowerCase()) ||
         item.artistName.toLowerCase().includes(query.q.toLowerCase());
       return matchesQuery;
     });
-    const sortedItems = sortItems(filteredItems, query.sortBy, query.sortDirection);
+    const sortedItems = sortItems(filteredItems, query.sortBy, query.sortDirection, !normalizedStatus && !query.sortBy);
     const total = sortedItems.length;
     const pageSize = query.pageSize;
     const page = query.page;

@@ -54,15 +54,22 @@ export type PipelineDashboardResponseDto = {
   polling: PollingMetaDto;
 };
 
-export type PipelineWorkflowStatus = "discovered" | "pending_review" | "accepted" | "rejected";
+export type PipelineWorkflowStatus = "discovered" | "downloading" | "pending_review" | "accepted" | "rejected";
 export type Phase4PipelineStageStatus = "not_started" | "pending" | "approved" | "rejected";
 export type AsyncPipelineExecutionStatus = "pending" | "processing" | "completed" | "failed" | "retry_scheduled" | "dlq";
-export type TranslationWorkflowStatus = "not_started" | "pending" | "approved" | "rejected";
+export type RenderJobStatus = "pending" | "processing" | "completed" | "failed" | "missing";
+export type TranslationWorkflowStatus = "not_started" | "pending" | "submitted" | "approved" | "rejected";
+export type PipelineArtifactStatus = "ready" | "missing" | "expired" | "deleted" | "delete_failed";
 export type PipelineStageName =
+  | "downloading"
+  | "transcripting"
   | "transcript_review"
+  | "taste_auditing"
   | "taste_audit"
   | "manual_review"
+  | "translating"
   | "translation_review"
+  | "artifact_rendering"
   | "final_asset_approval";
 
 export type Phase4PipelineStageDto = {
@@ -76,6 +83,7 @@ export type Phase4PipelineItemDto = {
   artistName: string;
   candidateTitle: string;
   workflowStatus: PipelineWorkflowStatus;
+  artifactStatus: PipelineArtifactStatus;
   currentStage: PipelineStageName | "completed" | "rejected";
   stages: Phase4PipelineStageDto[];
   translation: {
@@ -93,6 +101,27 @@ export type Phase4PipelineItemDto = {
     pauseReason?: string | null;
     updatedAt: string;
   };
+  renderJob?: {
+    jobId: string;
+    status: RenderJobStatus;
+    progress?: string | null;
+    result?: string | null;
+    currentStage?: string | null;
+    updatedAt?: string | null;
+  };
+  pipelineActivity?: {
+    jobId: string;
+    status: RenderJobStatus;
+    progress?: string | null;
+    currentStage?: string | null;
+    updatedAt?: string | null;
+    logs: Array<{
+      timestamp?: string | null;
+      level: "info" | "success" | "warning" | "error";
+      stage?: string | null;
+      message: string;
+    }>;
+  };
   lastUpdatedAt: string;
 };
 
@@ -104,11 +133,86 @@ export type Phase4PipelineDashboardResponseDto = {
   polling: PollingMetaDto;
 };
 
+export type CandidatePipelineResponseDto = {
+  candidateId: string;
+  candidateStatus: PipelineWorkflowStatus;
+  reviewId: string;
+  reviewType: PipelineStageName;
+  reviewStatus: Phase4PipelineStageStatus;
+  version: number;
+  taskId?: string | null;
+  message?: string | null;
+};
+
+export type CandidateReviewDetailDto = {
+  reviewId: string;
+  reviewType: PipelineStageName;
+  status: Phase4PipelineStageStatus;
+  version: number;
+  decisionComment: string | null;
+  decidedBy: string | null;
+  decidedAt: string | null;
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type CandidateTranscriptSegmentDto = {
+  lineIndex: number;
+  startTime: number;
+  endTime: number;
+  text: string;
+  status: string;
+};
+
+export type CandidateTranslationLineDto = {
+  lineIndex: number;
+  startTime: number;
+  endTime: number;
+  sourceText: string;
+  translatedText: string | null;
+  status: string;
+};
+
+export type CandidateWorkflowDetailDto = {
+  candidateId: string;
+  artistId: string;
+  artistName: string;
+  candidateTitle: string;
+  sourceUrl: string;
+  workflowStatus: PipelineWorkflowStatus;
+  currentStage: PipelineStageName | "completed" | "rejected" | "not_started";
+  reviews: CandidateReviewDetailDto[];
+  transcript: {
+    videoId: string;
+    segmentCount: number;
+    segments: CandidateTranscriptSegmentDto[];
+  };
+  tasteAudit: {
+    decision?: string | null;
+    score?: number | null;
+    keyLyrics?: string[];
+    comment?: string | null;
+    recordedAt?: string;
+    recordedBy?: string;
+    rawDetails?: string | null;
+  } | null;
+  translation: {
+    lineCount: number;
+    lines: CandidateTranslationLineDto[];
+  };
+};
+
 export type PipelineStageViewModel = {
   id: string;
   label: string;
   statusLabel: string;
   statusTone: StatusTone;
+};
+
+export type PipelineProgressStageViewModel = {
+  id: PipelineStageName;
+  label: string;
+  state: "done" | "current" | "todo";
 };
 
 export type PipelineRowViewModel = {
@@ -118,12 +222,42 @@ export type PipelineRowViewModel = {
   candidateTitle: string;
   workflowStatusLabel: string;
   workflowStatusTone: StatusTone;
+  artifactStatus: PipelineArtifactStatus;
+  artifactStatusLabel: string;
+  canStartRender: boolean;
+  canRetryProcessing: boolean;
   currentStageLabel: string;
   translationStatusLabel: string;
   translationStatusTone: StatusTone;
   asyncExecutionLabel: string | null;
   asyncExecutionTone: StatusTone;
   asyncExecutionDetail: string | null;
+  renderJob: {
+    jobId: string;
+    statusLabel: string;
+    statusTone: StatusTone;
+    progressLabel: string | null;
+    resultLabel: string | null;
+    currentStageLabel: string | null;
+    updatedAtLabel: string | null;
+    isActive: boolean;
+  } | null;
+  processingActivity: {
+    jobId: string;
+    statusLabel: string;
+    statusTone: StatusTone;
+    progressLabel: string | null;
+    currentStageLabel: string | null;
+    updatedAtLabel: string | null;
+    logs: Array<{
+      id: string;
+      timestampLabel: string;
+      level: "info" | "success" | "warning" | "error";
+      stageLabel: string | null;
+      message: string;
+    }>;
+  } | null;
   lastUpdatedAtLabel: string;
   stages: PipelineStageViewModel[];
+  progressStages: PipelineProgressStageViewModel[];
 };

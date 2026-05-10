@@ -1,4 +1,12 @@
-import { useEffect, useRef, useState, type ChangeEvent, type ComponentPropsWithoutRef, type CompositionEvent } from "react";
+import {
+  useEffect,
+  useRef,
+  useState,
+  type ChangeEvent,
+  type ComponentPropsWithoutRef,
+  type CompositionEvent,
+  type KeyboardEvent,
+} from "react";
 
 import { Search } from "lucide-react";
 
@@ -31,12 +39,17 @@ export function SearchInput({
   const [isComposing, setIsComposing] = useState(false);
   const timeoutRef = useRef<number | null>(null);
   const isPendingRef = useRef(false);
+  const committedValueRef = useRef(draftValue);
 
   useEffect(() => {
     if (!isControlled || isComposing || isPendingRef.current) {
       return;
     }
-    setDraftValue(String(value ?? ""));
+    const nextValue = String(value ?? "");
+    committedValueRef.current = nextValue;
+    // Controlled inputs need to reflect URL state changes pushed from outside this component.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setDraftValue(nextValue);
   }, [isComposing, isControlled, value]);
 
   useEffect(() => {
@@ -64,9 +77,23 @@ export function SearchInput({
     setPendingState(true);
     timeoutRef.current = window.setTimeout(() => {
       timeoutRef.current = null;
-      setPendingState(false);
-      onValueChange?.(nextValue);
+      commitValue(nextValue);
     }, debounceMs);
+  };
+
+  const commitValue = (nextValue: string) => {
+    if (timeoutRef.current !== null) {
+      window.clearTimeout(timeoutRef.current);
+      timeoutRef.current = null;
+    }
+
+    setPendingState(false);
+    if (committedValueRef.current === nextValue) {
+      return;
+    }
+
+    committedValueRef.current = nextValue;
+    onValueChange?.(nextValue);
   };
 
   const handleChange = (event: ChangeEvent<HTMLInputElement>) => {
@@ -78,7 +105,7 @@ export function SearchInput({
     }
   };
 
-  const handleCompositionStart = (_event: CompositionEvent<HTMLInputElement>) => {
+  const handleCompositionStart = () => {
     setIsComposing(true);
   };
 
@@ -87,6 +114,12 @@ export function SearchInput({
     setIsComposing(false);
     setDraftValue(nextValue);
     scheduleCommit(nextValue);
+  };
+
+  const handleKeyDown = (event: KeyboardEvent<HTMLInputElement>) => {
+    if (event.key === "Enter" && !isComposing) {
+      commitValue(event.currentTarget.value);
+    }
   };
 
   return (
@@ -104,9 +137,11 @@ export function SearchInput({
           inputClassName,
         )}
         defaultValue={isControlled ? undefined : defaultValue}
+        onBlur={(event) => commitValue(event.currentTarget.value)}
         onChange={handleChange}
         onCompositionEnd={handleCompositionEnd}
         onCompositionStart={handleCompositionStart}
+        onKeyDown={handleKeyDown}
         placeholder={placeholder}
         role="searchbox"
         spellCheck={false}

@@ -100,6 +100,7 @@ describe("dashboard adapters", () => {
           artistName: "M83",
           candidateTitle: "Midnight City",
           workflowStatus: "pending_review",
+          artifactStatus: "missing",
           currentStage: "manual_review",
           stages: [
             { stage: "transcript_review", status: "approved" },

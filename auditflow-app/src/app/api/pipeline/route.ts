@@ -10,6 +10,7 @@ type BackendPipelineItem = {
   artist_name: string;
   candidate_title: string;
   workflow_status: string;
+  artifact_status?: string;
   current_stage: string;
   stages: Array<{
     stage: string;
@@ -29,6 +30,27 @@ type BackendPipelineItem = {
     error_message?: string | null;
     pause_reason?: string | null;
     updated_at: string;
+  };
+  render_job?: {
+    job_id: string;
+    status: string;
+    progress?: string | null;
+    result?: string | null;
+    current_stage?: string | null;
+    updated_at?: string | null;
+  };
+  pipeline_activity?: {
+    job_id: string;
+    status: string;
+    progress?: string | null;
+    current_stage?: string | null;
+    updated_at?: string | null;
+    logs: Array<{
+      timestamp?: string | null;
+      level: "info" | "success" | "warning" | "error";
+      stage?: string | null;
+      message: string;
+    }>;
   };
   last_updated_at: string;
 };
@@ -91,6 +113,31 @@ function sortItems(items: BackendPipelineItem[], sortBy?: string, sortDirection?
   return sorted;
 }
 
+function resolveCurrentStage(item: BackendPipelineItem) {
+  const execution = item.async_execution;
+  if (execution?.status === "processing" || execution?.status === "pending" || execution?.status === "retry_scheduled") {
+    if (execution.current_stage === "download") {
+      return "downloading";
+    }
+    if (execution.current_stage === "transcribe") {
+      return "transcripting";
+    }
+    if (execution.current_stage === "audit") {
+      return "taste_auditing";
+    }
+    if (execution.current_stage === "translate") {
+      return "translating";
+    }
+    if (execution.current_stage === "render") {
+      return "artifact_rendering";
+    }
+  }
+  if (item.workflow_status === "downloading") {
+    return "downloading";
+  }
+  return item.current_stage;
+}
+
 export async function GET(request: NextRequest) {
   const query = parseListQueryParams(request.nextUrl.searchParams);
   const backendUrl = new URL(`${getBackendBaseUrl()}/v1/pipeline`);
@@ -108,14 +155,16 @@ export async function GET(request: NextRequest) {
     }
 
     const rawItems = (payload as BackendPipelineResponse).items;
-    const inReviewItems = rawItems.filter((item) => item.workflow_status === "pending_review");
+    const inReviewItems = rawItems.filter((item) => item.workflow_status === "pending_review" || item.workflow_status === "downloading");
+    const requestedStages = new Set((query.status ?? "").split(",").map((item) => item.trim()).filter(Boolean));
     const filteredItems = inReviewItems.filter((item) => {
+      const currentStage = resolveCurrentStage(item);
       const matchesQuery =
         !query.q ||
         item.candidate_title.toLowerCase().includes(query.q.toLowerCase()) ||
         item.artist_name.toLowerCase().includes(query.q.toLowerCase()) ||
         item.candidate_id.toLowerCase().includes(query.q.toLowerCase());
-      const matchesStage = !query.status || item.current_stage === query.status;
+      const matchesStage = requestedStages.size === 0 || requestedStages.has(currentStage);
       return matchesQuery && matchesStage;
     });
     const sortedItems = sortItems(filteredItems, query.sortBy, query.sortDirection);
@@ -131,7 +180,8 @@ export async function GET(request: NextRequest) {
         artistName: item.artist_name,
         candidateTitle: item.candidate_title,
         workflowStatus: item.workflow_status,
-        currentStage: item.current_stage,
+        artifactStatus: item.artifact_status ?? "missing",
+        currentStage: resolveCurrentStage(item),
         stages: item.stages.map((stage) => ({
           stage: stage.stage,
           status: stage.status,
@@ -151,6 +201,31 @@ export async function GET(request: NextRequest) {
             errorMessage: item.async_execution.error_message ?? null,
             pauseReason: item.async_execution.pause_reason ?? null,
             updatedAt: normalizeBackendTimestamp(item.async_execution.updated_at),
+          },
+        } : {}),
+        ...(item.render_job ? {
+          renderJob: {
+            jobId: item.render_job.job_id,
+            status: item.render_job.status,
+            progress: item.render_job.progress ?? null,
+            result: item.render_job.result ?? null,
+            currentStage: item.render_job.current_stage ?? null,
+            updatedAt: item.render_job.updated_at ? normalizeBackendTimestamp(item.render_job.updated_at) : null,
+          },
+        } : {}),
+        ...(item.pipeline_activity ? {
+          pipelineActivity: {
+            jobId: item.pipeline_activity.job_id,
+            status: item.pipeline_activity.status,
+            progress: item.pipeline_activity.progress ?? null,
+            currentStage: item.pipeline_activity.current_stage ?? null,
+            updatedAt: item.pipeline_activity.updated_at ? normalizeBackendTimestamp(item.pipeline_activity.updated_at) : null,
+            logs: item.pipeline_activity.logs.map((log) => ({
+              timestamp: log.timestamp ? normalizeBackendTimestamp(log.timestamp) : null,
+              level: log.level,
+              stage: log.stage ?? null,
+              message: log.message,
+            })),
           },
         } : {}),
         lastUpdatedAt: normalizeBackendTimestamp(item.last_updated_at),

@@ -2,6 +2,7 @@ import { NextRequest } from "next/server";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { GET as getArtistsRoute } from "@/app/api/artists/route";
+import { GET as getPhase9CutoverReadinessRoute } from "@/app/api/phase9/cutover-readiness/route";
 import { GET as getQueueRoute } from "@/app/api/queue/route";
 
 describe("real api routes", () => {
@@ -125,6 +126,100 @@ describe("real api routes", () => {
       reviewId: "review-2",
       reviewType: "translation_review",
       candidateId: "candidate-1",
+    });
+  });
+
+  it("prioritizes pending queue items in the default review view", async () => {
+    vi.spyOn(global, "fetch").mockResolvedValue({
+      ok: true,
+      json: async () => ({
+        items: [
+          {
+            review_id: "review-rejected",
+            artist_id: "artist-a",
+            artist_name: "A.M.",
+            candidate_id: "candidate-a",
+            candidate_title: "Rejected historical item",
+            review_type: "transcript_review",
+            status: "rejected",
+            version: 2,
+            queued_at: "2026-04-29T10:00:00.000Z",
+            published_at: null,
+            source_url: "https://example.com/a",
+          },
+          {
+            review_id: "review-pending",
+            artist_id: "artist-b",
+            artist_name: "2 Chainz",
+            candidate_id: "candidate-b",
+            candidate_title: "Pending actionable item",
+            review_type: "transcript_review",
+            status: "pending",
+            version: 1,
+            queued_at: "2026-04-22T10:00:00.000Z",
+            published_at: null,
+            source_url: "https://example.com/b",
+          },
+        ],
+        pagination: { page: 1, page_size: 2, total: 2, total_pages: 1 },
+        meta: { generated_at: "2026-04-29T12:00:00.000Z" },
+      }),
+    } as Response);
+
+    const response = await getQueueRoute(new NextRequest("http://localhost/api/queue"));
+    const payload = await response.json();
+
+    expect(payload.items.map((item: { reviewId: string }) => item.reviewId)).toEqual(["review-pending"]);
+  });
+
+  it("normalizes phase 9 cutover readiness report from the backend", async () => {
+    vi.spyOn(global, "fetch").mockResolvedValue({
+      ok: true,
+      json: async () => ({
+        report: {
+          generated_at: "2026-04-29T12:00:00.000Z",
+          read_source: "legacy",
+          stability_window_days: 7,
+          ready_for_cutover: false,
+          gates: [
+            { name: "schema_freeze", passed: false, details: { required: true } },
+            { name: "rollback_window", passed: true, details: { required: "rollback must remain enabled" } },
+          ],
+        },
+      }),
+    } as Response);
+
+    const response = await getPhase9CutoverReadinessRoute();
+    const payload = await response.json();
+
+    expect(payload).toEqual({
+      report: {
+        generatedAt: "2026-04-29T12:00:00.000Z",
+        readSource: "legacy",
+        stabilityWindowDays: 7,
+        readyForCutover: false,
+        gates: [
+          { name: "schema_freeze", passed: false, details: { required: true } },
+          { name: "rollback_window", passed: true, details: { required: "rollback must remain enabled" } },
+        ],
+      },
+    });
+  });
+
+  it("returns a readable error when phase 9 readiness backend fails", async () => {
+    vi.spyOn(global, "fetch").mockResolvedValue({
+      ok: false,
+      status: 503,
+      json: async () => ({ detail: "cutover readiness unavailable" }),
+    } as Response);
+
+    const response = await getPhase9CutoverReadinessRoute();
+    const payload = await response.json();
+
+    expect(response.status).toBe(503);
+    expect(payload).toMatchObject({
+      code: "phase9_cutover_readiness_failed",
+      message: "cutover readiness unavailable",
     });
   });
 });

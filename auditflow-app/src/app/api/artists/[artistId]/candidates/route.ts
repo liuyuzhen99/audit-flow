@@ -41,10 +41,17 @@ export async function GET(
       );
     }
 
+    const discoveredItems = Array.isArray(payload.items)
+      ? payload.items.filter((item) => {
+          const candidate = item as Record<string, unknown>;
+          return candidate.status === "discovered";
+        })
+      : [];
+
     return NextResponse.json({
       artistId: payload.artist_id,
-      items: Array.isArray(payload.items)
-        ? payload.items.map((item) => {
+      items: discoveredItems
+        .map((item) => {
             const candidate = item as Record<string, unknown>;
             return {
               candidateId: candidate.candidate_id,
@@ -62,12 +69,12 @@ export async function GET(
               failureReason: candidate.failure_reason,
             };
           })
-        : [],
+        ,
       pagination: {
         page: (payload.pagination as Record<string, number>).page,
         pageSize: (payload.pagination as Record<string, number>).page_size,
-        total: (payload.pagination as Record<string, number>).total,
-        totalPages: (payload.pagination as Record<string, number>).total_pages,
+        total: discoveredItems.length,
+        totalPages: Math.max(Math.ceil(discoveredItems.length / (payload.pagination as Record<string, number>).page_size), 1),
       },
     });
   } catch (error) {

@@ -1,3 +1,5 @@
+import Link from "next/link";
+
 import { LibraryDashboardClient } from "@/components/features/library/library-dashboard-client";
 import { ErrorState } from "@/components/shared/error-state";
 import { getLibraryDashboard } from "@/lib/api/library";
@@ -54,6 +56,8 @@ export default async function LibraryPage({ searchParams }: LibraryPageProps) {
   }
 
   const dashboard = adaptLibraryDashboard(dashboardResponse);
+  const readyAsset = dashboard.cards.find((asset) => asset.artifactStatusLabel === "Ready");
+  const missingAsset = dashboard.cards.find((asset) => asset.artifactStatusLabel !== "Ready");
 
   return (
     <section className="space-y-6">
@@ -64,21 +68,31 @@ export default async function LibraryPage({ searchParams }: LibraryPageProps) {
             Review the real accepted-asset list after a single candidate completes the workflow.
           </p>
         </div>
-        <div className="flex gap-3">
-          <button
-            className="rounded-2xl border border-[var(--color-border)] px-5 py-3 text-sm font-semibold text-slate-400 cursor-not-allowed"
-            disabled
-            title="Library detail remains outside this Phase 4 integration pass"
-          >
-            Detail Deferred
-          </button>
-          <button
-            className="rounded-2xl bg-slate-200 px-5 py-3 text-sm font-semibold text-slate-400 cursor-not-allowed"
-            disabled
-            title="Keep smoke tests focused on a single asset at a time"
-          >
-            One Asset Per Run
-          </button>
+        <div className="flex flex-wrap gap-3">
+          {readyAsset ? (
+            <Link
+              className="rounded-2xl bg-[var(--color-primary)] px-5 py-3 text-sm font-semibold text-white shadow-sm hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-primary)]"
+              href={`/library/${readyAsset.id}`}
+            >
+              Open ready preview
+            </Link>
+          ) : null}
+          {missingAsset ? (
+            <Link
+              className="rounded-2xl border border-amber-200 bg-amber-50 px-5 py-3 text-sm font-semibold text-amber-800"
+              href={`/library/${missingAsset.id}`}
+            >
+              Review missing artifact
+            </Link>
+          ) : null}
+          {!readyAsset && !missingAsset ? (
+            <Link
+              className="rounded-2xl border border-[var(--color-border)] px-5 py-3 text-sm font-semibold text-slate-700"
+              href="/library?status=accepted"
+            >
+              Accepted assets
+            </Link>
+          ) : null}
         </div>
       </div>
 

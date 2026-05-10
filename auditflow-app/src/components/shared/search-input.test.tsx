@@ -59,4 +59,22 @@ describe("SearchInput", () => {
 
     expect(onValueChange).toHaveBeenCalledWith("zhong");
   });
+
+  it("commits pending text immediately on enter or blur", () => {
+    const onValueChange = vi.fn();
+
+    render(<SearchInput debounceMs={400} placeholder="Search artists..." onValueChange={onValueChange} />);
+
+    const input = screen.getByRole("searchbox", { name: "Search artists..." });
+
+    fireEvent.change(input, { target: { value: "m83" } });
+    fireEvent.keyDown(input, { key: "Enter" });
+
+    expect(onValueChange).toHaveBeenCalledWith("m83");
+
+    fireEvent.change(input, { target: { value: "aurora" } });
+    fireEvent.blur(input);
+
+    expect(onValueChange).toHaveBeenCalledWith("aurora");
+  });
 });

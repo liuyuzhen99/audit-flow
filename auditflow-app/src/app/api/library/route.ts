@@ -108,6 +108,7 @@ export async function GET(request: NextRequest) {
     const filteredItems = rawItems.filter((item) => {
       const matchesQuery =
         !query.q ||
+        item.asset_id.toLowerCase().includes(query.q.toLowerCase()) ||
         item.title.toLowerCase().includes(query.q.toLowerCase()) ||
         item.artist_name.toLowerCase().includes(query.q.toLowerCase());
       const matchesStatus = !query.status || item.curation_status === query.status;
