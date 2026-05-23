@@ -1,4 +1,4 @@
-import { fireEvent, render, screen } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const mockReplace = vi.fn();
@@ -31,7 +31,11 @@ vi.mock("@/lib/api/pipeline", async () => {
 });
 
 describe("PipelineDashboardClient", () => {
+  const scrollIntoView = vi.fn();
+
   beforeEach(() => {
+    scrollIntoView.mockReset();
+    Element.prototype.scrollIntoView = scrollIntoView;
     mockReplace.mockReset();
     mockNavigation.pathname = "/pipeline";
     mockNavigation.searchParams = new URLSearchParams();
@@ -132,6 +136,9 @@ describe("PipelineDashboardClient", () => {
       "/api/audit-log?aggregateType=candidate&aggregateId=candidate-1",
     );
     expect(screen.queryByText("passes taste")).not.toBeInTheDocument();
+    await waitFor(() => {
+      expect(scrollIntoView).toHaveBeenCalledWith({ block: "start", behavior: "smooth" });
+    });
   });
 
   it("starts a render job for final approval rows with missing artifact", async () => {

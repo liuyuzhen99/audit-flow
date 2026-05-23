@@ -36,7 +36,11 @@ vi.mock("@/lib/api/pipeline", () => ({
 }));
 
 describe("QueueDashboardClient", () => {
+  const scrollIntoView = vi.fn();
+
   beforeEach(() => {
+    scrollIntoView.mockReset();
+    Element.prototype.scrollIntoView = scrollIntoView;
     mockReplace.mockReset();
     mockNavigation.pathname = "/queue";
     mockNavigation.searchParams = new URLSearchParams();
@@ -123,6 +127,9 @@ describe("QueueDashboardClient", () => {
 
     expect(await screen.findByText("Review Details")).toBeInTheDocument();
     expect(screen.getAllByText("Wake up").length).toBeGreaterThan(0);
+    expect(screen.getByRole("button", { name: "View Details" })).toHaveAttribute("aria-expanded", "true");
+    expect(screen.getByText("Review Details").closest("section")).toHaveAttribute("id", "queue-review-details");
+    expect(scrollIntoView).toHaveBeenCalledWith({ block: "start", behavior: "smooth" });
     expect(mockGetCandidateWorkflowDetail).toHaveBeenCalledWith({ candidateId: "candidate-1" });
   });
 

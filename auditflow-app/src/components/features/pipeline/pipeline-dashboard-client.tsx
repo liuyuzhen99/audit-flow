@@ -104,6 +104,20 @@ export function PipelineDashboardClient({
     requestedExpandedCandidateId && rows.some((row) => row.candidateId === requestedExpandedCandidateId)
       ? requestedExpandedCandidateId
       : null;
+
+  useEffect(() => {
+    if (!expandedCandidateId) {
+      return;
+    }
+    const timeoutId = window.setTimeout(() => {
+      document.getElementById(`pipeline-details-${expandedCandidateId}`)?.scrollIntoView?.({
+        block: "start",
+        behavior: "smooth",
+      });
+    }, 0);
+    return () => window.clearTimeout(timeoutId);
+  }, [expandedCandidateId]);
+
   const selectedStageValues = useMemo(() => (query.status ?? "").split(",").filter(Boolean), [query.status]);
   const selectedStageLabels = statusOptions
     .filter((option) => selectedStageValues.includes(option.value))

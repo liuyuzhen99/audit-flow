@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, type ReactNode } from "react";
+import { useEffect, useRef, useState, type ReactNode, type RefObject } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { createColumnHelper, type ColumnDef } from "@tanstack/react-table";
@@ -93,6 +93,7 @@ export function QueueDashboardClient({ initialDashboard }: QueueDashboardClientP
     loading: boolean;
     error: string | null;
   }>({ candidateId: null, data: null, loading: false, error: null });
+  const detailPanelRef = useRef<HTMLElement | null>(null);
 
   const { data, error, isRefreshing } = usePollingResource({
     initialData: initialDashboard,
@@ -187,6 +188,7 @@ export function QueueDashboardClient({ initialDashboard }: QueueDashboardClientP
         actionState.message === null;
       const canDecide = row.status === "pending";
       const canOpenPipeline = row.status === "pending" || (row.status === "approved" && row.reviewType !== "final_asset_approval");
+      const isViewingDetails = detailState.candidateId === row.candidateId;
       const pipelineSearchParams = new URLSearchParams({
         q: row.candidateId,
         candidateId: row.candidateId,
@@ -234,6 +236,8 @@ export function QueueDashboardClient({ initialDashboard }: QueueDashboardClientP
               Audit Log
             </a>
             <button
+              aria-controls="queue-review-details"
+              aria-expanded={isViewingDetails}
               className="text-slate-500 hover:text-[var(--color-primary)]"
               onClick={() => {
                 void handleViewDetails(row);
@@ -249,6 +253,19 @@ export function QueueDashboardClient({ initialDashboard }: QueueDashboardClientP
   });
 
   const tableColumns: ColumnDef<QueueTableRowViewModel, string>[] = [...columns, actionColumn];
+
+  useEffect(() => {
+    if (!detailState.candidateId) {
+      return;
+    }
+    const timeoutId = window.setTimeout(() => {
+      detailPanelRef.current?.scrollIntoView?.({
+        block: "start",
+        behavior: "smooth",
+      });
+    }, 0);
+    return () => window.clearTimeout(timeoutId);
+  }, [detailState.candidateId, detailState.loading, detailState.data, detailState.error]);
 
   return (
     <section className="space-y-6">
@@ -313,7 +330,7 @@ export function QueueDashboardClient({ initialDashboard }: QueueDashboardClientP
 
         {actionState.message ? <p className="mx-4 mt-4 text-sm text-emerald-700">{actionState.message}</p> : null}
 
-        <QueueReviewDetails state={detailState} />
+        <QueueReviewDetails panelRef={detailPanelRef} state={detailState} />
 
         <DataTable
           className="rounded-t-none border-0 shadow-none"
@@ -340,7 +357,8 @@ export function QueueDashboardClient({ initialDashboard }: QueueDashboardClientP
   );
 }
 
-function QueueReviewDetails({ state }: {
+function QueueReviewDetails({ panelRef, state }: {
+  panelRef: RefObject<HTMLElement | null>;
   state: {
     candidateId: string | null;
     data: CandidateWorkflowDetailDto | null;
@@ -352,10 +370,14 @@ function QueueReviewDetails({ state }: {
     return null;
   }
   if (state.loading) {
-    return <div className="mx-4 mt-4 rounded-2xl border border-dashed border-[var(--color-border)] bg-slate-50 p-4 text-sm text-slate-500">Loading review details...</div>;
+    return <section className="mx-4 mt-4 rounded-2xl border border-dashed border-[var(--color-border)] bg-slate-50 p-4 text-sm text-slate-500" id="queue-review-details" ref={panelRef}>Loading review details...</section>;
   }
   if (state.error) {
-    return <ErrorState className="mx-4 mt-4" description="The queue row remains available while the detail request can be retried." title={state.error} />;
+    return (
+      <section id="queue-review-details" ref={panelRef}>
+        <ErrorState className="mx-4 mt-4" description="The queue row remains available while the detail request can be retried." title={state.error} />
+      </section>
+    );
   }
   if (!state.data) {
     return null;
@@ -366,7 +388,7 @@ function QueueReviewDetails({ state }: {
   const translationReview = state.data.reviews.find((review) => review.reviewType === "translation_review");
 
   return (
-    <section className="mx-4 mt-4 rounded-2xl border border-[var(--color-border)] bg-slate-50 p-4">
+    <section className="mx-4 mt-4 rounded-2xl border border-[var(--color-border)] bg-slate-50 p-4" id="queue-review-details" ref={panelRef}>
       <div className="flex flex-col gap-1 md:flex-row md:items-end md:justify-between">
         <div>
           <p className="text-xs uppercase tracking-[0.12em] text-slate-400">Review Details</p>
