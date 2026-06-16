@@ -2,7 +2,7 @@ import { NextRequest } from "next/server";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { GET as getArtistsRoute } from "@/app/api/artists/route";
-import { GET as getPhase9CutoverReadinessRoute } from "@/app/api/phase9/cutover-readiness/route";
+import { GET as getCutoverReadinessRoute } from "@/app/api/cutover/readiness/route";
 import { GET as getQueueRoute } from "@/app/api/queue/route";
 
 describe("real api routes", () => {
@@ -172,7 +172,7 @@ describe("real api routes", () => {
     expect(payload.items.map((item: { reviewId: string }) => item.reviewId)).toEqual(["review-pending"]);
   });
 
-  it("normalizes phase 9 cutover readiness report from the backend", async () => {
+  it("normalizes cutover readiness report from the backend", async () => {
     vi.spyOn(global, "fetch").mockResolvedValue({
       ok: true,
       json: async () => ({
@@ -189,7 +189,7 @@ describe("real api routes", () => {
       }),
     } as Response);
 
-    const response = await getPhase9CutoverReadinessRoute();
+    const response = await getCutoverReadinessRoute();
     const payload = await response.json();
 
     expect(payload).toEqual({
@@ -206,19 +206,19 @@ describe("real api routes", () => {
     });
   });
 
-  it("returns a readable error when phase 9 readiness backend fails", async () => {
+  it("returns a readable error when cutover readiness backend fails", async () => {
     vi.spyOn(global, "fetch").mockResolvedValue({
       ok: false,
       status: 503,
       json: async () => ({ detail: "cutover readiness unavailable" }),
     } as Response);
 
-    const response = await getPhase9CutoverReadinessRoute();
+    const response = await getCutoverReadinessRoute();
     const payload = await response.json();
 
     expect(response.status).toBe(503);
     expect(payload).toMatchObject({
-      code: "phase9_cutover_readiness_failed",
+      code: "cutover_readiness_failed",
       message: "cutover readiness unavailable",
     });
   });

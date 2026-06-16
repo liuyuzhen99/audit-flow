@@ -64,7 +64,7 @@ export default async function QueuePage({ searchParams }: QueuePageProps) {
         <div>
           <h1 className="text-5xl font-semibold tracking-tight text-slate-950">Audit Queue</h1>
           <p className="mt-3 text-lg text-slate-500">
-            Review one candidate at a time through the real Phase 4 approval checkpoints.
+            Review one candidate at a time through the real review workflow approval checkpoints.
           </p>
         </div>
       </div>

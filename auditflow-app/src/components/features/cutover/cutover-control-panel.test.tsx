@@ -1,10 +1,10 @@
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-const mockGetPhase9CutoverReadiness = vi.fn();
+const mockGetCutoverReadiness = vi.fn();
 
-vi.mock("@/lib/api/phase9", () => ({
-  getPhase9CutoverReadiness: () => mockGetPhase9CutoverReadiness(),
+vi.mock("@/lib/api/cutover", () => ({
+  getCutoverReadiness: () => mockGetCutoverReadiness(),
 }));
 
 const blockedReport = {
@@ -27,32 +27,32 @@ const readyReport = {
   gates: blockedReport.gates.map((gate) => ({ ...gate, passed: true, details: {} })),
 };
 
-describe("Phase9ControlPanel", () => {
+describe("CutoverControlPanel", () => {
   beforeEach(() => {
-    mockGetPhase9CutoverReadiness.mockReset();
+    mockGetCutoverReadiness.mockReset();
   });
 
   it("renders blocked readiness with gate reasons and raw report link", async () => {
-    const { Phase9ControlPanel } = await import("@/components/features/phase9/phase9-control-panel");
+    const { CutoverControlPanel } = await import("@/components/features/cutover/cutover-control-panel");
 
-    render(<Phase9ControlPanel initialReport={blockedReport} />);
+    render(<CutoverControlPanel initialReport={blockedReport} />);
 
-    expect(screen.getByText("Phase 9 Cutover")).toBeInTheDocument();
+    expect(screen.getByText("Cutover Readiness")).toBeInTheDocument();
     expect(screen.getByText("Blocked")).toBeInTheDocument();
     expect(screen.getByText(/Blocked gates: Schema Freeze, Dual Write, Shadow Traffic/i)).toBeInTheDocument();
     expect(screen.getByText("dual-write report is outside threshold or unavailable")).toBeInTheDocument();
     expect(screen.getByText("shadow traffic report unavailable")).toBeInTheDocument();
     expect(screen.getByRole("link", { name: "Open raw report" })).toHaveAttribute(
       "href",
-      "/api/phase9/cutover-readiness",
+      "/api/cutover/readiness",
     );
   });
 
   it("refreshes readiness report on demand", async () => {
-    mockGetPhase9CutoverReadiness.mockResolvedValue({ report: readyReport });
-    const { Phase9ControlPanel } = await import("@/components/features/phase9/phase9-control-panel");
+    mockGetCutoverReadiness.mockResolvedValue({ report: readyReport });
+    const { CutoverControlPanel } = await import("@/components/features/cutover/cutover-control-panel");
 
-    render(<Phase9ControlPanel initialReport={blockedReport} />);
+    render(<CutoverControlPanel initialReport={blockedReport} />);
 
     fireEvent.click(screen.getByRole("button", { name: "Run readiness check" }));
 
@@ -64,10 +64,10 @@ describe("Phase9ControlPanel", () => {
   });
 
   it("keeps the previous report visible when refresh fails", async () => {
-    mockGetPhase9CutoverReadiness.mockRejectedValue(new Error("backend unavailable"));
-    const { Phase9ControlPanel } = await import("@/components/features/phase9/phase9-control-panel");
+    mockGetCutoverReadiness.mockRejectedValue(new Error("backend unavailable"));
+    const { CutoverControlPanel } = await import("@/components/features/cutover/cutover-control-panel");
 
-    render(<Phase9ControlPanel initialReport={blockedReport} />);
+    render(<CutoverControlPanel initialReport={blockedReport} />);
 
     fireEvent.click(screen.getByRole("button", { name: "Run readiness check" }));
 
@@ -78,11 +78,11 @@ describe("Phase9ControlPanel", () => {
   });
 
   it("renders backend unavailable state without an initial report", async () => {
-    const { Phase9ControlPanel } = await import("@/components/features/phase9/phase9-control-panel");
+    const { CutoverControlPanel } = await import("@/components/features/cutover/cutover-control-panel");
 
-    render(<Phase9ControlPanel initialError="Phase 9 backend unavailable" initialReport={null} />);
+    render(<CutoverControlPanel initialError="cutover backend unavailable" initialReport={null} />);
 
     expect(screen.getByText("Unavailable")).toBeInTheDocument();
-    expect(screen.getByText("Phase 9 backend unavailable")).toBeInTheDocument();
+    expect(screen.getByText("cutover backend unavailable")).toBeInTheDocument();
   });
 });

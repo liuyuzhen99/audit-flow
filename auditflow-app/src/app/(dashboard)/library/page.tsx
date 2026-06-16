@@ -71,7 +71,7 @@ export default async function LibraryPage({ searchParams }: LibraryPageProps) {
         <div className="flex flex-wrap gap-3">
           {readyAsset ? (
             <Link
-              className="rounded-2xl bg-[var(--color-primary)] px-5 py-3 text-sm font-semibold text-white shadow-sm hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-primary)]"
+              className="rounded-2xl border border-slate-200 bg-white px-5 py-3 text-sm font-semibold !text-[var(--color-primary)] shadow-sm transition-colors hover:border-[rgba(99,102,241,0.35)] hover:bg-[rgba(99,102,241,0.08)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[rgba(99,102,241,0.24)]"
               href={`/library/${readyAsset.id}`}
             >
               Open ready preview

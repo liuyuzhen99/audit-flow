@@ -12,7 +12,7 @@ import type { ListQueryDto } from "@/types/api";
 import type {
   CandidatePipelineResponseDto,
   CandidateWorkflowDetailDto,
-  Phase4PipelineDashboardResponseDto,
+  ReviewWorkflowDashboardResponseDto,
 } from "@/types/pipeline";
 
 function resolveApiUrl(path: string, baseUrl?: string) {
@@ -34,7 +34,7 @@ export async function getPipelineDashboard(options?: {
   baseUrl?: string;
   fetcher?: typeof fetch;
   query?: Partial<Pick<ListQueryDto, "page" | "pageSize" | "q" | "status" | "sortBy" | "sortDirection" | "tick">>;
-}): Promise<Phase4PipelineDashboardResponseDto> {
+}): Promise<ReviewWorkflowDashboardResponseDto> {
   return fetchValidatedJson({
     fetcher: options?.fetcher,
     input: resolveApiUrl(buildPipelineDashboardUrl(options?.query), options?.baseUrl),

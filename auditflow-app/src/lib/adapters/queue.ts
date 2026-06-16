@@ -1,6 +1,6 @@
 import type { PaginationMetaDto } from "@/types/api";
 import type { ModuleSummary } from "@/types/common";
-import type { Phase4QueueDashboardResponseDto, QueueTableRowViewModel, ReviewType } from "@/types/queue";
+import type { ReviewQueueDashboardResponseDto, QueueTableRowViewModel, ReviewType } from "@/types/queue";
 
 import { getQueueStatusPresentation, getReviewTypePresentation } from "@/lib/status/audit";
 
@@ -17,7 +17,7 @@ function formatReviewTypeLabel(reviewType: ReviewType): string {
   return getReviewTypePresentation(reviewType).label;
 }
 
-function adaptQueueRow(item: Phase4QueueDashboardResponseDto["items"][number]): QueueTableRowViewModel {
+function adaptQueueRow(item: ReviewQueueDashboardResponseDto["items"][number]): QueueTableRowViewModel {
   const statusPresentation = getQueueStatusPresentation(item.status);
 
   return {
@@ -38,11 +38,11 @@ function adaptQueueRow(item: Phase4QueueDashboardResponseDto["items"][number]): 
   };
 }
 
-export function adaptQueueDashboard(data: Phase4QueueDashboardResponseDto): {
+export function adaptQueueDashboard(data: ReviewQueueDashboardResponseDto): {
   summary: ModuleSummary[];
   rows: QueueTableRowViewModel[];
   pagination: PaginationMetaDto;
-  polling: Phase4QueueDashboardResponseDto["polling"];
+  polling: ReviewQueueDashboardResponseDto["polling"];
 } {
   return {
     summary: data.summary,

@@ -100,7 +100,7 @@ export function LibraryDashboardClient({ summary, cards }: LibraryDashboardClien
               <div className="flex flex-wrap gap-2">
                 {asset.artifactStatusLabel === "Ready" ? (
                   <Link
-                    className="inline-flex items-center rounded-2xl bg-[var(--color-primary)] px-4 py-3 text-sm font-semibold text-white"
+                    className="inline-flex items-center rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-semibold !text-[var(--color-primary)] shadow-sm transition-colors hover:border-[rgba(99,102,241,0.35)] hover:bg-[rgba(99,102,241,0.08)]"
                     href={`/library/${asset.id}`}
                   >
                     Open preview

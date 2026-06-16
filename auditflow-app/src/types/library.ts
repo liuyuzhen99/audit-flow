@@ -52,7 +52,7 @@ export type LibraryDashboardResponseDto = {
   meta: ResponseMetaDto;
 };
 
-export type Phase4LibraryAssetDto = {
+export type AcceptedLibraryAssetDto = {
   id: string;
   artistId: string;
   artistName: string;
@@ -80,16 +80,16 @@ export type ArtifactSummaryDto = {
   expiresAt: string | null;
 };
 
-export type LibraryAssetDetailDto = Phase4LibraryAssetDto & {
+export type LibraryAssetDetailDto = AcceptedLibraryAssetDto & {
   primaryArtifact: ArtifactSummaryDto | null;
   previewUrl: string | null;
   previewUrlExpiresInSeconds: number | null;
   fallbackDownloadUrl: string | null;
 };
 
-export type Phase4LibraryDashboardResponseDto = {
+export type AcceptedLibraryDashboardResponseDto = {
   summary: SummaryMetricDto[];
-  items: Phase4LibraryAssetDto[];
+  items: AcceptedLibraryAssetDto[];
   meta: ResponseMetaDto;
 };
 

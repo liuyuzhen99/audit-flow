@@ -13,8 +13,8 @@ export default function DashboardIndexPage() {
           TransFlow workspace is ready.
         </h1>
         <p className="mt-3 max-w-3xl text-lg text-slate-500">
-          Phase 1 establishes the shared shell, design tokens, navigation, and
-          route skeletons for the operational modules.
+          The shared shell establishes design tokens, navigation, and route
+          skeletons for the operational modules.
         </p>
       </div>
 

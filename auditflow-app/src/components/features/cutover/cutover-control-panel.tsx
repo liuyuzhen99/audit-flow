@@ -4,12 +4,12 @@ import { useState } from "react";
 import { RefreshCw } from "lucide-react";
 
 import { StatusBadge } from "@/components/shared/status-badge";
-import { getPhase9CutoverReadiness } from "@/lib/api/phase9";
-import type { Phase9CutoverReadinessReportDto } from "@/types/phase9";
+import { getCutoverReadiness } from "@/lib/api/cutover";
+import type { CutoverReadinessReportDto } from "@/types/cutover";
 
-type Phase9ControlPanelProps = {
+type CutoverControlPanelProps = {
   initialError?: string | null;
-  initialReport: Phase9CutoverReadinessReportDto | null;
+  initialReport: CutoverReadinessReportDto | null;
 };
 
 function formatGateName(name: string) {
@@ -42,7 +42,7 @@ function summarizeDetails(details: Record<string, unknown>) {
   return "";
 }
 
-export function Phase9ControlPanel({ initialError = null, initialReport }: Phase9ControlPanelProps) {
+export function CutoverControlPanel({ initialError = null, initialReport }: CutoverControlPanelProps) {
   const [report, setReport] = useState(initialReport);
   const [error, setError] = useState(initialError);
   const [isRefreshing, setIsRefreshing] = useState(false);
@@ -52,10 +52,10 @@ export function Phase9ControlPanel({ initialError = null, initialReport }: Phase
     setIsRefreshing(true);
     setError(null);
     try {
-      const response = await getPhase9CutoverReadiness();
+      const response = await getCutoverReadiness();
       setReport(response.report);
     } catch (refreshError) {
-      setError(refreshError instanceof Error ? refreshError.message : "Failed to refresh Phase 9 readiness");
+      setError(refreshError instanceof Error ? refreshError.message : "Failed to refresh cutover readiness");
     } finally {
       setIsRefreshing(false);
     }
@@ -66,7 +66,7 @@ export function Phase9ControlPanel({ initialError = null, initialReport }: Phase
       <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
         <div className="min-w-0">
           <div className="flex flex-wrap items-center gap-2">
-            <p className="text-xs font-semibold uppercase tracking-[0.12em] text-slate-400">Phase 9 Cutover</p>
+            <p className="text-xs font-semibold uppercase tracking-[0.12em] text-slate-400">Cutover Readiness</p>
             {report ? (
               <StatusBadge
                 label={report.readyForCutover ? "Ready" : "Blocked"}
@@ -107,7 +107,7 @@ export function Phase9ControlPanel({ initialError = null, initialReport }: Phase
           </button>
           <a
             className="inline-flex items-center rounded-xl bg-[var(--color-primary)] px-3 py-2 text-sm font-semibold text-white"
-            href="/api/phase9/cutover-readiness"
+            href="/api/cutover/readiness"
             rel="noreferrer"
             target="_blank"
           >

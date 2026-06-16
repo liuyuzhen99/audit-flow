@@ -20,7 +20,7 @@ export async function POST(
 ) {
   const { artistId } = await context.params;
   const baseUrl = getBackendBaseUrl();
-  const syncUrl = new URL(`${baseUrl}/internal/phase3/spotify/sync-followed-artists`);
+  const syncUrl = new URL(`${baseUrl}/internal/artist-catalog/spotify/sync-followed-artists`);
   const backendUrl = new URL(`${getBackendBaseUrl()}/v1/artists/${artistId}/resync`);
   const artistsLookupUrl = new URL(`${baseUrl}/v1/artists`);
   artistsLookupUrl.searchParams.set("q", artistId);

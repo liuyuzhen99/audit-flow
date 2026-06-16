@@ -86,7 +86,7 @@ describe("PipelineDashboardClient", () => {
     });
   });
 
-  it("renders workflow rows and phase 4 scoped messaging", async () => {
+  it("renders workflow rows and review workflow scoped messaging", async () => {
     const { PipelineDashboardClient } = await import("@/components/features/pipeline/pipeline-dashboard-client");
 
     render(

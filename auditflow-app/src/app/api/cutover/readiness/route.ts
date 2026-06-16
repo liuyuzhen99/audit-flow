@@ -2,13 +2,13 @@ import { NextResponse } from "next/server";
 
 import { createErrorResponse, getBackendBaseUrl, getBackendErrorMessage, parseBackendJson } from "@/app/api/backend";
 
-type BackendPhase9Gate = {
+type BackendCutoverGate = {
   name?: unknown;
   passed?: unknown;
   details?: unknown;
 };
 
-type BackendPhase9Report = {
+type BackendCutoverReport = {
   generated_at?: unknown;
   read_source?: unknown;
   stability_window_days?: unknown;
@@ -16,13 +16,13 @@ type BackendPhase9Report = {
   gates?: unknown;
 };
 
-type BackendPhase9Response = {
-  report?: BackendPhase9Report;
+type BackendCutoverResponse = {
+  report?: BackendCutoverReport;
   error?: { message?: string };
   detail?: string;
 };
 
-function normalizeGate(gate: BackendPhase9Gate) {
+function normalizeGate(gate: BackendCutoverGate) {
   return {
     name: typeof gate.name === "string" ? gate.name : "unknown",
     passed: gate.passed === true,
@@ -33,8 +33,8 @@ function normalizeGate(gate: BackendPhase9Gate) {
   };
 }
 
-function normalizeReport(report: BackendPhase9Report) {
-  const gates = Array.isArray(report.gates) ? report.gates.map((gate) => normalizeGate(gate as BackendPhase9Gate)) : [];
+function normalizeReport(report: BackendCutoverReport) {
+  const gates = Array.isArray(report.gates) ? report.gates.map((gate) => normalizeGate(gate as BackendCutoverGate)) : [];
 
   return {
     generatedAt: typeof report.generated_at === "string" ? report.generated_at : new Date().toISOString(),
@@ -50,16 +50,16 @@ function normalizeReport(report: BackendPhase9Report) {
 
 export async function GET() {
   try {
-    const response = await fetch(`${getBackendBaseUrl()}/internal/phase9/cutover-readiness`, {
+    const response = await fetch(`${getBackendBaseUrl()}/internal/cutover/readiness`, {
       cache: "no-store",
     });
-    const payload = await parseBackendJson<BackendPhase9Response>(response);
+    const payload = await parseBackendJson<BackendCutoverResponse>(response);
 
     if (!response.ok || !payload.report) {
       return createErrorResponse(
         response.ok ? 502 : response.status,
-        "phase9_cutover_readiness_failed",
-        getBackendErrorMessage(payload, "Failed to load Phase 9 cutover readiness"),
+        "cutover_readiness_failed",
+        getBackendErrorMessage(payload, "Failed to load cutover readiness"),
       );
     }
 
@@ -67,8 +67,8 @@ export async function GET() {
   } catch (error) {
     return createErrorResponse(
       502,
-      "phase9_cutover_readiness_failed",
-      error instanceof Error ? error.message : "Failed to reach Phase 9 backend",
+      "cutover_readiness_failed",
+      error instanceof Error ? error.message : "Failed to reach cutover backend",
     );
   }
 }

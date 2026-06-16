@@ -4,7 +4,7 @@ import { libraryAssetDetailDtoSchema, libraryDashboardResponseDtoSchema } from "
 import { fetchValidatedJson } from "@/lib/api/fetcher";
 
 import type { ListQueryDto } from "@/types/api";
-import type { LibraryAssetDetailDto, Phase4LibraryDashboardResponseDto } from "@/types/library";
+import type { LibraryAssetDetailDto, AcceptedLibraryDashboardResponseDto } from "@/types/library";
 
 function resolveApiUrl(path: string, baseUrl?: string) {
   if (!baseUrl) {
@@ -23,7 +23,7 @@ export async function getLibraryDashboard(options?: {
   baseUrl?: string;
   fetcher?: typeof fetch;
   query?: Partial<Pick<ListQueryDto, "page" | "pageSize" | "q" | "status" | "sortBy" | "sortDirection">>;
-}): Promise<Phase4LibraryDashboardResponseDto> {
+}): Promise<AcceptedLibraryDashboardResponseDto> {
   return fetchValidatedJson({
     fetcher: options?.fetcher,
     input: resolveApiUrl(buildLibraryDashboardUrl(options?.query), options?.baseUrl),

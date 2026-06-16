@@ -9,7 +9,7 @@ import {
 import { fetchValidatedJson } from "@/lib/api/fetcher";
 
 import type { ListQueryDto } from "@/types/api";
-import type { AuditLogResponseDto, Phase4QueueDashboardResponseDto, ReviewDecisionRequestDto, ReviewDecisionResponseDto } from "@/types/queue";
+import type { AuditLogResponseDto, ReviewQueueDashboardResponseDto, ReviewDecisionRequestDto, ReviewDecisionResponseDto } from "@/types/queue";
 
 function resolveApiUrl(path: string, baseUrl?: string) {
   if (!baseUrl) {
@@ -30,7 +30,7 @@ export async function getQueueDashboard(options?: {
   baseUrl?: string;
   fetcher?: typeof fetch;
   query?: Partial<Pick<ListQueryDto, "page" | "pageSize" | "q" | "status" | "sortBy" | "sortDirection" | "tick">>;
-}): Promise<Phase4QueueDashboardResponseDto> {
+}): Promise<ReviewQueueDashboardResponseDto> {
   return fetchValidatedJson({
     fetcher: options?.fetcher,
     input: resolveApiUrl(buildQueueDashboardUrl(options?.query), options?.baseUrl),

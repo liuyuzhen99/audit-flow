@@ -65,7 +65,7 @@ export default async function PipelinePage({ searchParams }: PipelinePageProps) 
         <div>
           <h1 className="text-5xl font-semibold tracking-tight text-slate-950">Pipeline</h1>
           <p className="mt-3 text-lg text-slate-500">
-            Monitor only in-review Phase 4 candidates and focus on the current workflow stage for a single song.
+            Monitor only in-review review workflow candidates and focus on the current workflow stage for a single song.
           </p>
         </div>
       </div>

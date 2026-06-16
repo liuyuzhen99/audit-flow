@@ -51,7 +51,7 @@ export type ReviewType =
 
 export type QueueReviewStatus = "pending" | "approved" | "rejected";
 
-export type Phase4QueueItemDto = {
+export type ReviewQueueItemDto = {
   reviewId: string;
   artistId: string;
   artistName: string;
@@ -69,9 +69,9 @@ export type Phase4QueueItemDto = {
   sourceUrl: string;
 };
 
-export type Phase4QueueDashboardResponseDto = {
+export type ReviewQueueDashboardResponseDto = {
   summary: SummaryMetricDto[];
-  items: Phase4QueueItemDto[];
+  items: ReviewQueueItemDto[];
   pagination: PaginationMetaDto;
   meta: ResponseMetaDto;
   polling: PollingMetaDto;

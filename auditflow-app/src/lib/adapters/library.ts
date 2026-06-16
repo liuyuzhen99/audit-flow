@@ -4,7 +4,7 @@ import type {
   LibraryAssetCardViewModel,
   LibraryAssetDetailDto,
   LibraryAssetDetailViewModel,
-  Phase4LibraryDashboardResponseDto,
+  AcceptedLibraryDashboardResponseDto,
 } from "@/types/library";
 
 import { getLibraryStatusPresentation } from "@/lib/status/audit";
@@ -22,7 +22,7 @@ function formatApprovedAtLabel(timestamp: string | null): string {
   });
 }
 
-function adaptCard(item: Phase4LibraryDashboardResponseDto["items"][number]): LibraryAssetCardViewModel {
+function adaptCard(item: AcceptedLibraryDashboardResponseDto["items"][number]): LibraryAssetCardViewModel {
   const statusPresentation = getLibraryStatusPresentation(item.status);
 
   return {
@@ -49,7 +49,7 @@ function formatArtifactStatusLabel(status: ArtifactAvailabilityStatus): string {
   return labels[status];
 }
 
-export function adaptLibraryDashboard(data: Phase4LibraryDashboardResponseDto): {
+export function adaptLibraryDashboard(data: AcceptedLibraryDashboardResponseDto): {
   summary: ModuleSummary[];
   cards: LibraryAssetCardViewModel[];
 } {

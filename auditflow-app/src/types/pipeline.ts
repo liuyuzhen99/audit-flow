@@ -55,7 +55,7 @@ export type PipelineDashboardResponseDto = {
 };
 
 export type PipelineWorkflowStatus = "discovered" | "downloading" | "pending_review" | "accepted" | "rejected";
-export type Phase4PipelineStageStatus = "not_started" | "pending" | "approved" | "rejected";
+export type ReviewWorkflowStageStatus = "not_started" | "pending" | "approved" | "rejected";
 export type AsyncPipelineExecutionStatus = "pending" | "processing" | "completed" | "failed" | "retry_scheduled" | "dlq";
 export type RenderJobStatus = "pending" | "processing" | "completed" | "failed" | "missing";
 export type TranslationWorkflowStatus = "not_started" | "pending" | "submitted" | "approved" | "rejected";
@@ -72,12 +72,12 @@ export type PipelineStageName =
   | "artifact_rendering"
   | "final_asset_approval";
 
-export type Phase4PipelineStageDto = {
+export type ReviewWorkflowStageDto = {
   stage: PipelineStageName;
-  status: Phase4PipelineStageStatus;
+  status: ReviewWorkflowStageStatus;
 };
 
-export type Phase4PipelineItemDto = {
+export type ReviewWorkflowItemDto = {
   candidateId: string;
   artistId: string;
   artistName: string;
@@ -85,7 +85,7 @@ export type Phase4PipelineItemDto = {
   workflowStatus: PipelineWorkflowStatus;
   artifactStatus: PipelineArtifactStatus;
   currentStage: PipelineStageName | "completed" | "rejected";
-  stages: Phase4PipelineStageDto[];
+  stages: ReviewWorkflowStageDto[];
   translation: {
     status: TranslationWorkflowStatus;
     updatedAt?: string;
@@ -125,9 +125,9 @@ export type Phase4PipelineItemDto = {
   lastUpdatedAt: string;
 };
 
-export type Phase4PipelineDashboardResponseDto = {
+export type ReviewWorkflowDashboardResponseDto = {
   summary: SummaryMetricDto[];
-  items: Phase4PipelineItemDto[];
+  items: ReviewWorkflowItemDto[];
   pagination: PaginationMetaDto;
   meta: ResponseMetaDto;
   polling: PollingMetaDto;
@@ -138,7 +138,7 @@ export type CandidatePipelineResponseDto = {
   candidateStatus: PipelineWorkflowStatus;
   reviewId: string;
   reviewType: PipelineStageName;
-  reviewStatus: Phase4PipelineStageStatus;
+  reviewStatus: ReviewWorkflowStageStatus;
   version: number;
   taskId?: string | null;
   message?: string | null;
@@ -147,7 +147,7 @@ export type CandidatePipelineResponseDto = {
 export type CandidateReviewDetailDto = {
   reviewId: string;
   reviewType: PipelineStageName;
-  status: Phase4PipelineStageStatus;
+  status: ReviewWorkflowStageStatus;
   version: number;
   decisionComment: string | null;
   decidedBy: string | null;

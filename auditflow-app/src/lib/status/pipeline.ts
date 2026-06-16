@@ -1,7 +1,7 @@
 import type { StatusConfig } from "@/lib/status";
 import type {
   DeliverableStatus,
-  Phase4PipelineStageStatus,
+  ReviewWorkflowStageStatus,
   AsyncPipelineExecutionStatus,
   PipelineRunStatus,
   PipelineStageStatus,
@@ -31,7 +31,7 @@ const pipelineStageStatusPresentationMap: Record<PipelineStageStatus, StatusConf
   failed: { label: "Failed", tone: "danger" },
 };
 
-const phase4PipelineStageStatusPresentationMap: Record<Phase4PipelineStageStatus, StatusConfig> = {
+const reviewWorkflowStageStatusPresentationMap: Record<ReviewWorkflowStageStatus, StatusConfig> = {
   not_started: { label: "Not started", tone: "neutral" },
   pending: { label: "Pending", tone: "warning" },
   approved: { label: "Approved", tone: "success" },
@@ -73,8 +73,8 @@ export function getPipelineStageStatusPresentation(status: PipelineStageStatus):
   return pipelineStageStatusPresentationMap[status];
 }
 
-export function getPhase4PipelineStageStatusPresentation(status: Phase4PipelineStageStatus): StatusConfig {
-  return phase4PipelineStageStatusPresentationMap[status];
+export function getReviewWorkflowStageStatusPresentation(status: ReviewWorkflowStageStatus): StatusConfig {
+  return reviewWorkflowStageStatusPresentationMap[status];
 }
 
 export function getAsyncPipelineExecutionStatusPresentation(status: AsyncPipelineExecutionStatus): StatusConfig {

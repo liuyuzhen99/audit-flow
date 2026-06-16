@@ -1,8 +1,8 @@
 import type { ModuleSummary } from "@/types/common";
-import type { Phase4PipelineDashboardResponseDto, Phase4PipelineItemDto, PipelineRowViewModel, PipelineStageName, PipelineStageViewModel, RenderJobStatus } from "@/types/pipeline";
+import type { ReviewWorkflowDashboardResponseDto, ReviewWorkflowItemDto, PipelineRowViewModel, PipelineStageName, PipelineStageViewModel, RenderJobStatus } from "@/types/pipeline";
 import type { StatusTone } from "@/types/common";
 
-import { getAsyncPipelineExecutionStatusPresentation, getPhase4PipelineStageStatusPresentation, getPipelineWorkflowStatusPresentation, getTranslationStatusPresentation } from "@/lib/status/pipeline";
+import { getAsyncPipelineExecutionStatusPresentation, getReviewWorkflowStageStatusPresentation, getPipelineWorkflowStatusPresentation, getTranslationStatusPresentation } from "@/lib/status/pipeline";
 
 function formatStageLabel(stage: PipelineStageName | "completed" | "rejected"): string {
   switch (stage) {
@@ -55,8 +55,8 @@ function formatUpdatedLabel(timestamp: string): string {
   });
 }
 
-function adaptStage(item: Phase4PipelineItemDto["stages"][number]): PipelineStageViewModel {
-  const presentation = getPhase4PipelineStageStatusPresentation(item.status);
+function adaptStage(item: ReviewWorkflowItemDto["stages"][number]): PipelineStageViewModel {
+  const presentation = getReviewWorkflowStageStatusPresentation(item.status);
 
   return {
     id: item.stage,
@@ -66,7 +66,7 @@ function adaptStage(item: Phase4PipelineItemDto["stages"][number]): PipelineStag
   };
 }
 
-function adaptRow(item: Phase4PipelineDashboardResponseDto["items"][number]): PipelineRowViewModel {
+function adaptRow(item: ReviewWorkflowDashboardResponseDto["items"][number]): PipelineRowViewModel {
   const workflowPresentation = getPipelineWorkflowStatusPresentation(item.workflowStatus);
   const translationPresentation = getTranslationStatusPresentation(item.translation.status);
   const asyncPresentation = item.asyncExecution
@@ -116,7 +116,7 @@ function adaptRow(item: Phase4PipelineDashboardResponseDto["items"][number]): Pi
 }
 
 function adaptProcessingActivity(
-  activity: NonNullable<Phase4PipelineItemDto["pipelineActivity"]>,
+  activity: NonNullable<ReviewWorkflowItemDto["pipelineActivity"]>,
 ): NonNullable<PipelineRowViewModel["processingActivity"]> {
   const status = formatRenderJobStatus(activity.status);
   return {
@@ -136,7 +136,7 @@ function adaptProcessingActivity(
   };
 }
 
-function adaptRenderJob(job: NonNullable<Phase4PipelineItemDto["renderJob"]>): NonNullable<PipelineRowViewModel["renderJob"]> {
+function adaptRenderJob(job: NonNullable<ReviewWorkflowItemDto["renderJob"]>): NonNullable<PipelineRowViewModel["renderJob"]> {
   const status = formatRenderJobStatus(job.status);
   return {
     jobId: job.jobId,
@@ -165,7 +165,7 @@ function formatRenderJobStatus(status: RenderJobStatus): { label: string; tone: 
   }
 }
 
-function formatArtifactStatusLabel(status: Phase4PipelineItemDto["artifactStatus"]): string {
+function formatArtifactStatusLabel(status: ReviewWorkflowItemDto["artifactStatus"]): string {
   switch (status) {
     case "ready":
       return "Ready";
@@ -180,11 +180,11 @@ function formatArtifactStatusLabel(status: Phase4PipelineItemDto["artifactStatus
   }
 }
 
-export function adaptPipelineDashboard(data: Phase4PipelineDashboardResponseDto): {
+export function adaptPipelineDashboard(data: ReviewWorkflowDashboardResponseDto): {
   summary: ModuleSummary[];
   rows: PipelineRowViewModel[];
-  pagination: Phase4PipelineDashboardResponseDto["pagination"];
-  polling: Phase4PipelineDashboardResponseDto["polling"];
+  pagination: ReviewWorkflowDashboardResponseDto["pagination"];
+  polling: ReviewWorkflowDashboardResponseDto["polling"];
 } {
   return {
     summary: data.summary,

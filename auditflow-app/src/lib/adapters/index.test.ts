@@ -122,7 +122,7 @@ describe("dashboard adapters", () => {
 
   it("adapts library dashboard data for accepted assets", () => {
     const viewModel = adaptLibraryDashboard({
-      summary: [{ id: "accepted", label: "Accepted Assets", value: "1", hint: "Phase 4 library feed", tone: "success" }],
+      summary: [{ id: "accepted", label: "Accepted Assets", value: "1", hint: "review workflow library feed", tone: "success" }],
       items: [
         {
           id: "asset-1",
