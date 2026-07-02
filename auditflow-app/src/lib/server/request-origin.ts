@@ -1,19 +1,8 @@
 import { headers } from "next/headers";
 
 export async function getRequestOrigin() {
-  try {
-    const headerStore = await headers();
-    const forwardedHost = headerStore.get("x-forwarded-host");
-    const host = forwardedHost ?? headerStore.get("host");
-    const forwardedProto = headerStore.get("x-forwarded-proto");
-    const protocol = forwardedProto ?? (host?.startsWith("localhost") || host?.startsWith("127.0.0.1") ? "http" : "https");
-
-    if (!host) {
-      return "http://127.0.0.1:3000";
-    }
-
-    return `${protocol}://${host}`;
-  } catch {
-    return "http://127.0.0.1:3000";
-  }
+  // 为了避免在 K8s Ingress / 反向代理下由于端口映射导致的 ECONNREFUSED 错误，
+  // 服务端组件内部请求自身的 API 路由时，应始终直接访问本地回路地址和端口。
+  const port = process.env.PORT || "3000";
+  return `http://127.0.0.1:${port}`;
 }
